@@ -5,7 +5,7 @@ project.lock.json
 *.pyc
 nupkg/
 
-dbConnection
+/dbConnection
 
 # Visual Studio Code
 .vscode/
