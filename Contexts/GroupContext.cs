@@ -11,6 +11,7 @@ public class GroupContext : DbContext
     {
         optionsBuilder.UseMySql(
             File.ReadAllText("dbConnection"),
-            new MySqlServerVersion(new Version(10, 6, 15)));
+            new MySqlServerVersion(new Version(10, 6, 15)))
+            .UseQueryTrackingBehavior(QueryTrackingBehavior.TrackAll);;
     }
 }
