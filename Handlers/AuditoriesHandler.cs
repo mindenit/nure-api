@@ -4,29 +4,28 @@ using nure_api.Models;
 
 namespace nure_api.Handlers;
 
-public class GroupsHandler
+public class AuditoriesHandler
 {
-    public static List<Group> RemoveDuplicates(List<Group> groups)
+    public static List<Auditory> RemoveDuplicates(List<Auditory> groups)
     {
-        var duplicateGroupsById = groups.GroupBy(g => g.Id)
+        var duplicateAuditoriesById = groups.GroupBy(g => g.Id)
             .Where(g => g.Count() > 1)
             .SelectMany(g => g);
 
-        var duplicateGroupsByName = groups.GroupBy(g => g.Name)
+        var duplicateAuditoriesByName = groups.GroupBy(g => g.Name)
             .Where(g => g.Count() > 1)
             .SelectMany(g => g);
 
-        var allDuplicateGroups = groups.Except(duplicateGroupsById.Union(duplicateGroupsByName).ToList()).ToList();
-
-        return allDuplicateGroups;
+        var allDuplicateTeachers = groups.Except(duplicateAuditoriesById.Union(duplicateAuditoriesByName).ToList()).ToList();
+        
+        return allDuplicateTeachers;
     }
-
-
+    
     public static void Init()
     {
         using (HttpClient httpClient = new HttpClient())
         {
-            var webRequest = WebRequest.Create("https://cist.nure.ua/ias/app/tt/P_API_GROUP_JSON") as HttpWebRequest;
+            var webRequest = WebRequest.Create("https://cist.nure.ua/ias/app/tt/P_API_AUDITORIES_JSON") as HttpWebRequest;
 
             webRequest.ContentType = "application/json";
 
@@ -47,32 +46,32 @@ public class GroupsHandler
                 // Remove BOM
                 json = json.TrimStart('\uFEFF');
 
-                var groups = RemoveDuplicates(Group.Parse(json));
+                var auditories = RemoveDuplicates(Auditory.Parse(json));
 
                 using (var context = new Context())
                 {
-                    if (context.Groups.Any())
+                    if (context.Auditories.Any())
                     {
-                        foreach (var group in context.Groups)
+                        foreach (var auditory in context.Auditories)
                         {
-                            context.Groups.Remove(group);
+                            context.Auditories.Remove(auditory);
                         }
                     }
-                    context.Groups.AddRange(groups.ToArray());
+                    context.Auditories.AddRange(auditories.ToArray());
                     context.SaveChanges();
                 }
             }
         }
     }
-
-    public static List<Group> Get()
+    
+    public static List<Auditory> Get()
     {
-        List<Group> groups;
+        List<Auditory> auditories;
         using (var context = new Context())
         {
-            groups = context.Groups.ToList();
+            auditories = context.Auditories.ToList();
         }
 
-        return groups;
+        return auditories;
     }
 }

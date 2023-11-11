@@ -7,10 +7,28 @@ var builder = WebApplication.CreateBuilder(args);
 var app = builder.Build();
 
 GroupsHandler.Init();
-Console.WriteLine("Init complete");
+Console.WriteLine("Groups init complete");
+
+TeachersHandler.Init();
+Console.WriteLine("Teachers init complete");
+
+AuditoriesHandler.Init();
+Console.WriteLine("Auditories init complete");
+
+app.MapGet("/", async (HttpContext x) => "Main page" );
 
 app.MapGet("/groups", async (HttpContext x) => {
     var json = JsonConvert.SerializeObject(GroupsHandler.Get(), Formatting.Indented);
+    return Results.Content(json, "application/json");
+});
+
+app.MapGet("/teachers", async (HttpContext x) => {
+    var json = JsonConvert.SerializeObject(TeachersHandler.Get(), Formatting.Indented);
+    return Results.Content(json, "application/json");
+});
+
+app.MapGet("/auditories", async (HttpContext x) => {
+    var json = JsonConvert.SerializeObject(AuditoriesHandler.Get(), Formatting.Indented);
     return Results.Content(json, "application/json");
 });
 

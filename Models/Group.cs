@@ -11,7 +11,7 @@ public class Group
     public static List<Group> Parse(string json)
     {
         List<Group> groups = new List<Group>();
-        CistGroup? cistGroups = JsonConvert.DeserializeObject<CistGroup>(json);
+        var cistGroups = JsonConvert.DeserializeObject<dynamic>(json);
 
         if (cistGroups is not null && cistGroups.university is not null)
         {
@@ -27,7 +27,7 @@ public class Group
                             {
                                 foreach (var group in direction.groups)
                                 {
-                                    groups.Add(group);
+                                    groups.Add(new Group(){ Id = group.id, Name = group.name});
                                 }
                             }
                             if (direction.specialities is not null)
@@ -38,7 +38,7 @@ public class Group
                                     {
                                         foreach (var group in specialition.groups)
                                         {
-                                            groups.Add(group);
+                                            groups.Add(new Group(){ Id = group.id, Name = group.name});
                                         }
                                     }
                                 }

@@ -4,29 +4,28 @@ using nure_api.Models;
 
 namespace nure_api.Handlers;
 
-public class GroupsHandler
+public class TeachersHandler
 {
-    public static List<Group> RemoveDuplicates(List<Group> groups)
+    public static List<Teacher> RemoveDuplicates(List<Teacher> groups)
     {
-        var duplicateGroupsById = groups.GroupBy(g => g.Id)
+        var duplicateTeachersById = groups.GroupBy(g => g.Id)
             .Where(g => g.Count() > 1)
             .SelectMany(g => g);
 
-        var duplicateGroupsByName = groups.GroupBy(g => g.Name)
+        var duplicateTeachersByName = groups.GroupBy(g => g.FullName)
             .Where(g => g.Count() > 1)
             .SelectMany(g => g);
 
-        var allDuplicateGroups = groups.Except(duplicateGroupsById.Union(duplicateGroupsByName).ToList()).ToList();
-
-        return allDuplicateGroups;
+        var allDuplicateTeachers = groups.Except(duplicateTeachersById.Union(duplicateTeachersByName).ToList()).ToList();
+        
+        return allDuplicateTeachers;
     }
-
 
     public static void Init()
     {
         using (HttpClient httpClient = new HttpClient())
         {
-            var webRequest = WebRequest.Create("https://cist.nure.ua/ias/app/tt/P_API_GROUP_JSON") as HttpWebRequest;
+            var webRequest = WebRequest.Create("https://cist.nure.ua/ias/app/tt/P_API_PODR_JSON") as HttpWebRequest;
 
             webRequest.ContentType = "application/json";
 
@@ -46,33 +45,38 @@ public class GroupsHandler
 
                 // Remove BOM
                 json = json.TrimStart('\uFEFF');
+                
+                json = json.Remove(json.Length - 2);
+                
 
-                var groups = RemoveDuplicates(Group.Parse(json));
+                json += "]}}";
+
+                var teachers = RemoveDuplicates(Teacher.Parse(json));
 
                 using (var context = new Context())
                 {
-                    if (context.Groups.Any())
+                    if (context.Teachers.Any())
                     {
-                        foreach (var group in context.Groups)
+                        foreach (var teacher in context.Teachers)
                         {
-                            context.Groups.Remove(group);
+                            context.Teachers.Remove(teacher);
                         }
                     }
-                    context.Groups.AddRange(groups.ToArray());
+                    context.Teachers.AddRange(teachers.ToArray());
                     context.SaveChanges();
                 }
             }
         }
     }
-
-    public static List<Group> Get()
+    
+    public static List<Teacher> Get()
     {
-        List<Group> groups;
+        List<Teacher> teachers;
         using (var context = new Context())
         {
-            groups = context.Groups.ToList();
+            teachers = context.Teachers.ToList();
         }
 
-        return groups;
+        return teachers;
     }
 }
