@@ -15,6 +15,9 @@ Console.WriteLine("Teachers init complete");
 AuditoriesHandler.Init();
 Console.WriteLine("Auditories init complete");
 
+ScheduleHandler.Init();
+Console.WriteLine("Schedule init complete");
+
 app.MapGet("/", async (HttpContext x) => "Main page" );
 
 app.MapGet("/groups", async (HttpContext x) => {
@@ -33,10 +36,14 @@ app.MapGet("/auditories", async (HttpContext x) => {
 });
 
 app.MapGet("/schedule", async (HttpContext x) => {
-    var query = x.Request.Query["id"];
+    var id = long.Parse(x.Request.Query["id"]);
+    var type = x.Request.Query["type"];
+    var start_time = long.Parse(x.Request.Query["start_time"]);
+    var end_time = long.Parse(x.Request.Query["end_time"]);
     using var reader = new StreamReader(x.Request.Body);
     var body = await reader.ReadToEndAsync();
-    return Results.Ok($"Id is {query}");
+    var json = JsonConvert.SerializeObject(ScheduleHandler.GetEvents(id, type, start_time, end_time), Formatting.Indented);
+    return Results.Content(json, "application/json");
 });
 
 app.Run();

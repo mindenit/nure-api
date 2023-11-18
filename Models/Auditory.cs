@@ -7,6 +7,12 @@ namespace nure_api.Models
     {
         public int Id { get; set; }
         public string Name { get; set; }
+        
+        [JsonIgnore]
+        public List<Event> Schedule;
+
+        [JsonIgnore]
+        public DateTime lastUpdated;
 
         public static List<Auditory> Parse(string json)
         {

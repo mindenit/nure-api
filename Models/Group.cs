@@ -4,9 +4,13 @@ namespace nure_api.Models;
 
 public class Group
 {
-    
     public int Id { get; set; }
     public string Name { get; set; }
+
+    [JsonIgnore] public List<Event> Schedule { get; set; } = new();
+
+    [JsonIgnore]
+    public DateTime lastUpdated { get;set; }
     
     public static List<Group> Parse(string json)
     {

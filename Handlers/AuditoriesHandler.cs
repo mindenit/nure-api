@@ -6,19 +6,11 @@ namespace nure_api.Handlers;
 
 public class AuditoriesHandler
 {
-    public static List<Auditory> RemoveDuplicates(List<Auditory> groups)
+    public static List<Auditory> RemoveDuplicates(List<Auditory> list)
     {
-        var duplicateAuditoriesById = groups.GroupBy(g => g.Id)
-            .Where(g => g.Count() > 1)
-            .SelectMany(g => g);
-
-        var duplicateAuditoriesByName = groups.GroupBy(g => g.Name)
-            .Where(g => g.Count() > 1)
-            .SelectMany(g => g);
-
-        var allDuplicateTeachers = groups.Except(duplicateAuditoriesById.Union(duplicateAuditoriesByName).ToList()).ToList();
-        
-        return allDuplicateTeachers;
+        return list.GroupBy(x => new { x.Id, x.Name })
+            .Select(x => x.First())
+            .ToList();
     }
     
     public static void Init()

@@ -6,19 +6,11 @@ namespace nure_api.Handlers;
 
 public class TeachersHandler
 {
-    public static List<Teacher> RemoveDuplicates(List<Teacher> groups)
+    public static List<Teacher> RemoveDuplicates(List<Teacher> list)
     {
-        var duplicateTeachersById = groups.GroupBy(g => g.Id)
-            .Where(g => g.Count() > 1)
-            .SelectMany(g => g);
-
-        var duplicateTeachersByName = groups.GroupBy(g => g.FullName)
-            .Where(g => g.Count() > 1)
-            .SelectMany(g => g);
-
-        var allDuplicateTeachers = groups.Except(duplicateTeachersById.Union(duplicateTeachersByName).ToList()).ToList();
-        
-        return allDuplicateTeachers;
+        return list.GroupBy(x => new { x.Id })
+            .Select(x => x.First())
+            .ToList();
     }
 
     public static void Init()

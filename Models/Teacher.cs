@@ -8,6 +8,12 @@ public class Teacher
     public string ShortName { get; set; }
     public string FullName { get; set; }
     
+    [JsonIgnore]
+    public List<Event> Schedule;
+
+    [JsonIgnore]
+    public DateTime lastUpdated;
+    
     public static List<Teacher> Parse(string json)
     {
         List<Teacher> teachers = new List<Teacher>();

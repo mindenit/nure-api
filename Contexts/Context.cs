@@ -14,6 +14,13 @@ public class Context : DbContext
         optionsBuilder.UseMySql(
             File.ReadAllText("dbConnection"),
             new MySqlServerVersion(new Version(10, 6, 15)))
-            .UseQueryTrackingBehavior(QueryTrackingBehavior.TrackAll);;
+            .UseQueryTrackingBehavior(QueryTrackingBehavior.TrackAll);
     }
+    
+    /*protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Group>().Property(m => m.Schedule).Is;
+
+        base.OnModelCreating(modelBuilder);
+    }*/
 }

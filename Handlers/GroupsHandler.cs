@@ -6,19 +6,11 @@ namespace nure_api.Handlers;
 
 public class GroupsHandler
 {
-    public static List<Group> RemoveDuplicates(List<Group> groups)
+    public static List<Group> RemoveDuplicates(List<Group> list)
     {
-        var duplicateGroupsById = groups.GroupBy(g => g.Id)
-            .Where(g => g.Count() > 1)
-            .SelectMany(g => g);
-
-        var duplicateGroupsByName = groups.GroupBy(g => g.Name)
-            .Where(g => g.Count() > 1)
-            .SelectMany(g => g);
-
-        var allDuplicateGroups = groups.Except(duplicateGroupsById.Union(duplicateGroupsByName).ToList()).ToList();
-
-        return allDuplicateGroups;
+        return list.GroupBy(x => new { x.Id, x.Name })
+            .Select(x => x.First())
+            .ToList();
     }
 
 
