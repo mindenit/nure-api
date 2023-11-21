@@ -9,10 +9,10 @@ public class Teacher
     public string FullName { get; set; }
     
     [JsonIgnore]
-    public List<Event> Schedule;
+    public string Schedule { get; set; }
 
     [JsonIgnore]
-    public DateTime lastUpdated;
+    public DateTime lastUpdated { get; set; }
     
     public static List<Teacher> Parse(string json)
     {
@@ -33,7 +33,7 @@ public class Teacher
                             {
                                 foreach (var teacher in department.teachers)
                                 {
-                                    teachers.Add(new Teacher(){Id = teacher.id, FullName = teacher.full_name, ShortName = teacher.short_name});
+                                    teachers.Add(new Teacher(){Id = teacher.id, FullName = teacher.full_name, ShortName = teacher.short_name, Schedule = ""});
                                 }
                             }
                             if (department.departments is not null)
@@ -44,7 +44,7 @@ public class Teacher
                                     {
                                         foreach (var teacher in childDepartment.teachers)
                                         {
-                                            teachers.Add(new Teacher(){Id = teacher.id, FullName = teacher.full_name, ShortName = teacher.short_name});
+                                            teachers.Add(new Teacher(){Id = teacher.id, FullName = teacher.full_name, ShortName = teacher.short_name, Schedule = ""});
                                         }
                                     }
                                 }

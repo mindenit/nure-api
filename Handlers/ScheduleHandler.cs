@@ -77,15 +77,24 @@ public class ScheduleHandler
 
     private static Teacher? findTeacherById(dynamic teachers, int id)
     {
+        string FullName = "";
+        string ShortName = "";
+        string Schedule = "";
+        using (var context = new Context())
+        {
+            FullName = context.Teachers.Find(id).FullName;
+            ShortName = context.Teachers.Find(id).ShortName;
+            Schedule = context.Teachers.Find(id).Schedule;
+        }
         foreach (var teacher in teachers)
         {
-            if (teacher.id == id)
+            if (teacher == id)
             {
                 return new Teacher()
                 {
-                    Id = teacher.id,
-                    FullName = teacher.full_name,
-                    ShortName = teacher.short_name
+                    Id = teacher,
+                    FullName = FullName,
+                    ShortName = ShortName
                 };
             }
         }
@@ -97,12 +106,20 @@ public class ScheduleHandler
     {
         foreach (var group in groups)
         {
-            if (group.id == id)
+            string Name = "";
+            string Schedule = "";
+            using (var context = new Context())
+            {
+                Name = context.Groups.Find(id).Name;
+                Schedule = context.Groups.Find(id).Schedule;
+            }
+            if (group.ToObject<int>() == id)
             {
                 return new Group()
                 {
-                    Id = group.id,
-                    Name = group.full_name
+                    Id = group.ToObject<int>(),
+                    Name = Name,
+                    Schedule = Schedule
                 };
             }
         }
@@ -157,49 +174,72 @@ public class ScheduleHandler
             auditories = context.Auditories.ToList();
             teachers = context.Teachers.ToList();
 
-
             foreach (var group in groups)
             {
                 Console.WriteLine(group.Name);
-                try
+
+                var timeFromUpdate = (DateTime.Now - group.lastUpdated).TotalHours;
+
+                if (group.Schedule == "[]" || group.Schedule == "" || timeFromUpdate >= 3)
                 {
-                    group.Schedule = Parse(jsonRepair.Repair(Download(group.Id, 1)));
-                    group.lastUpdated = DateTime.Now;
-                }
-                catch (Exception e)
-                {
-                    group.Schedule = new List<Event>();
-                    group.lastUpdated = DateTime.Now;
+                    try
+                    {
+                        var json = jsonRepair.Repair(Download(group.Id, 1));
+                        var parsed = Parse(json);
+                        group.Schedule = JsonConvert.SerializeObject(parsed);
+                        group.lastUpdated = DateTime.Now;
+                    }
+                    catch (Exception e)
+                    {
+                        group.Schedule = "[]";
+                        group.lastUpdated = DateTime.Now;
+                    }
                 }
             }
+            
 
             foreach (var teacher in teachers)
             {
                 Console.WriteLine(teacher.ShortName);
-                try
+                
+                var timeFromUpdate = DateTime.Now - teacher.lastUpdated;
+
+                if (teacher.Schedule == "[]" || teacher.Schedule == "" || timeFromUpdate.Hours <= 3)
                 {
-                    teacher.Schedule = Parse(jsonRepair.Repair(Download(teacher.Id, 2)));
-                    teacher.lastUpdated = DateTime.Now;
-                }
-                catch (Exception e)
-                {
-                    teacher.Schedule = new List<Event>();
-                    teacher.lastUpdated = DateTime.Now;
+                    try
+                    {
+                        var json = jsonRepair.Repair(Download(teacher.Id, 2));
+                        var parsed = Parse(json);
+                        teacher.Schedule = JsonConvert.SerializeObject(parsed);
+                        teacher.lastUpdated = DateTime.Now;
+                    }
+                    catch (Exception e)
+                    {
+                        teacher.Schedule = "[]";
+                        teacher.lastUpdated = DateTime.Now;
+                    }
                 }
             }
 
             foreach (var auditory in auditories)
             {
                 Console.WriteLine(auditory.Name);
-                try
+                var timeFromUpdate = DateTime.Now - auditory.lastUpdated;
+
+                if (auditory.Schedule == "[]" || auditory.Schedule == "" || timeFromUpdate.Hours <= 3)
                 {
-                    auditory.Schedule = Parse(jsonRepair.Repair(Download(auditory.Id, 3)));
-                    auditory.lastUpdated = DateTime.Now;
-                }
-                catch (Exception e)
-                {
-                    auditory.Schedule = new List<Event>();
-                    auditory.lastUpdated = DateTime.Now;
+                    try
+                    {
+                        var json = jsonRepair.Repair(Download(auditory.Id, 2));
+                        var parsed = Parse(json);
+                        auditory.Schedule = JsonConvert.SerializeObject(parsed);
+                        auditory.lastUpdated = DateTime.Now;
+                    }
+                    catch (Exception e)
+                    {
+                        auditory.Schedule = "[]";
+                        auditory.lastUpdated = DateTime.Now;
+                    }
                 }
             }
             context.SaveChanges();
@@ -214,12 +254,12 @@ public class ScheduleHandler
         foreach (var lesson in events.events)
         {
             Event pair = new Event();
-            pair.NumberPair = int.Parse(lesson.number_pair);
-            pair.StartTime = long.Parse(lesson.start_time);
-            pair.EndTime = long.Parse(lesson.end_time);
-            pair.Type = getType(lesson.end_time);
+            pair.NumberPair = lesson.number_pair.ToObject<int>();
+            pair.StartTime = lesson.start_time.ToObject<long>();
+            pair.EndTime = lesson.end_time.ToObject<long>();
+            pair.Type = getType(lesson.type.ToObject<int>());
 
-            var auditory = getAuditory(lesson.auditory);
+            var auditory = getAuditory(lesson.auditory.ToString());
             if (auditory != null)
             {
                 pair.Auditory = auditory;
@@ -233,9 +273,9 @@ public class ScheduleHandler
                 };
             }
 
-            pair.Subject = findSubjectById(events.subjects, lesson.subject_id);
+            pair.Subject = findSubjectById(events.subjects, lesson.subject_id.ToObject<int>());
 
-            if (lesson.teachers.Length == 0)
+            if (lesson.teachers.Count == 0)
             {
                 pair.Teachers = new List<Teacher>();
             }
@@ -243,19 +283,18 @@ public class ScheduleHandler
             {
                 foreach (var teacher in lesson.teachers)
                 {
-                    pair.Teachers.Add(findTeacherById(lesson.teachers, teacher.id));
+                    pair.Teachers.Add(findTeacherById(lesson.teachers, teacher.ToObject<int>()));
                 }
             }
 
-            if (lesson.groups.Length == 0)
-            {
-                pair.Groups = new List<Group>();
-            }
+            if (lesson.groups.Count == 0)
+            { }
             else
             {
                 foreach (var group in lesson.groups)
                 {
-                    pair.Groups.Add(findGroupById(lesson.groups, group.id));
+                    var findedGroup = findGroupById(lesson.groups, group.ToObject<int>());
+                    pair.Groups.Add(findedGroup);
                 }
             }
 
@@ -274,7 +313,9 @@ public class ScheduleHandler
                 {
                     Group group = context.Groups.ToList().Find(x => x.Id == Id);
 
-                    return group.Schedule.Where(e => e.StartTime >= StartTime && e.StartTime <= EndTime)
+                    var schedule = JsonConvert.DeserializeObject <List<Event>>(group.Schedule);
+
+                    return schedule.Where(e => e.StartTime >= StartTime && e.StartTime <= EndTime)
                         .OrderBy(x => x.StartTime)
                         .ToList();
                 }
@@ -284,8 +325,10 @@ public class ScheduleHandler
                 using (var context = new Context())
                 {
                     var teacher = context.Teachers.ToList().Find(x => x.Id == Id);
+                    
+                    var schedule = JsonConvert.DeserializeObject <List<Event>>(teacher.Schedule);
 
-                    return teacher.Schedule.Where(e => e.StartTime >= StartTime && e.StartTime <= EndTime)
+                    return schedule.Where(e => e.StartTime >= StartTime && e.StartTime <= EndTime)
                         .OrderBy(x => x.StartTime)
                         .ToList();
                 }
@@ -295,8 +338,10 @@ public class ScheduleHandler
                 using (var context = new Context())
                 {
                     var auditory = context.Auditories.ToList().Find(x => x.Id == Id);
+                    
+                    var schedule = JsonConvert.DeserializeObject <List<Event>>(auditory.Schedule);
 
-                    return auditory.Schedule.Where(e => e.StartTime >= StartTime && e.StartTime <= EndTime)
+                    return schedule.Where(e => e.StartTime >= StartTime && e.StartTime <= EndTime)
                         .OrderBy(x => x.StartTime)
                         .ToList();
                 }

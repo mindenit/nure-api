@@ -9,7 +9,7 @@ namespace nure_api.Models
         public string Name { get; set; }
         
         [JsonIgnore]
-        public List<Event> Schedule;
+        public string Schedule { get; set; }
 
         [JsonIgnore]
         public DateTime lastUpdated;
@@ -30,7 +30,8 @@ namespace nure_api.Models
                             auditories.Add(new Auditory
                             {
                                 Id = int.Parse(auditory.id.ToString()),
-                                Name = auditory.short_name.ToString()
+                                Name = auditory.short_name.ToString(),
+                                Schedule = ""
                             });
                         }
                     }

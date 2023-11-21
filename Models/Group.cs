@@ -7,7 +7,7 @@ public class Group
     public int Id { get; set; }
     public string Name { get; set; }
 
-    [JsonIgnore] public List<Event> Schedule { get; set; } = new();
+    [JsonIgnore] public string? Schedule { get; set; }
 
     [JsonIgnore]
     public DateTime lastUpdated { get;set; }
@@ -31,7 +31,7 @@ public class Group
                             {
                                 foreach (var group in direction.groups)
                                 {
-                                    groups.Add(new Group(){ Id = group.id, Name = group.name});
+                                    groups.Add(new Group(){ Id = group.id, Name = group.name, Schedule = ""});
                                 }
                             }
                             if (direction.specialities is not null)
@@ -42,7 +42,7 @@ public class Group
                                     {
                                         foreach (var group in specialition.groups)
                                         {
-                                            groups.Add(new Group(){ Id = group.id, Name = group.name});
+                                            groups.Add(new Group(){ Id = group.id, Name = group.name, Schedule = ""});
                                         }
                                     }
                                 }
