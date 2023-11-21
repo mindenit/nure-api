@@ -12,7 +12,7 @@ namespace nure_api.Models
         public string Schedule { get; set; }
 
         [JsonIgnore]
-        public DateTime lastUpdated;
+        public DateTime lastUpdated { get; set; }
 
         public static List<Auditory> Parse(string json)
         {

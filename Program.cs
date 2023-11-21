@@ -6,14 +6,27 @@ using nure_api.Handlers;
 var builder = WebApplication.CreateBuilder(args);
 var app = builder.Build();
 
-GroupsHandler.Init();
-Console.WriteLine("Groups init complete");
 
-TeachersHandler.Init();
-Console.WriteLine("Teachers init complete");
+using (var context = new Context())
+{
+    if (!context.Groups.Any())
+    {
+        GroupsHandler.Init();
+        Console.WriteLine("Groups init complete");
+    }
 
-AuditoriesHandler.Init();
-Console.WriteLine("Auditories init complete");
+    if (!context.Teachers.Any())
+    {
+        TeachersHandler.Init();
+        Console.WriteLine("Teachers init complete");
+    }
+
+    if (!context.Auditories.Any())
+    {
+        AuditoriesHandler.Init();
+        Console.WriteLine("Auditories init complete");
+    }
+}
 
 ScheduleHandler.Init();
 Console.WriteLine("Schedule init complete");

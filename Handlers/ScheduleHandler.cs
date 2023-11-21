@@ -176,11 +176,12 @@ public class ScheduleHandler
 
             foreach (var group in groups)
             {
-                Console.WriteLine(group.Name);
 
                 var timeFromUpdate = (DateTime.Now - group.lastUpdated).TotalHours;
+                
+                Console.WriteLine($"{group.Name} - {timeFromUpdate}");
 
-                if (group.Schedule == "[]" || group.Schedule == "" || timeFromUpdate >= 3)
+                if (group.Schedule == "" || timeFromUpdate > 3)
                 {
                     try
                     {
@@ -200,11 +201,11 @@ public class ScheduleHandler
 
             foreach (var teacher in teachers)
             {
-                Console.WriteLine(teacher.ShortName);
+                var timeFromUpdate = (DateTime.Now - teacher.lastUpdated).TotalHours;
                 
-                var timeFromUpdate = DateTime.Now - teacher.lastUpdated;
+                Console.WriteLine($"{teacher.ShortName} - {timeFromUpdate}");
 
-                if (teacher.Schedule == "[]" || teacher.Schedule == "" || timeFromUpdate.Hours <= 3)
+                if (teacher.Schedule == "" || timeFromUpdate > 3)
                 {
                     try
                     {
@@ -223,10 +224,11 @@ public class ScheduleHandler
 
             foreach (var auditory in auditories)
             {
-                Console.WriteLine(auditory.Name);
-                var timeFromUpdate = DateTime.Now - auditory.lastUpdated;
+                var timeFromUpdate = (DateTime.Now - auditory.lastUpdated).TotalHours;
+                
+                Console.WriteLine($"{auditory.Name} - {timeFromUpdate}");
 
-                if (auditory.Schedule == "[]" || auditory.Schedule == "" || timeFromUpdate.Hours <= 3)
+                if (auditory.Schedule == "" || timeFromUpdate > 3)
                 {
                     try
                     {
