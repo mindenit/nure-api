@@ -2,13 +2,13 @@ using System.Net;
 using System.Text;
 using Newtonsoft.Json;
 using nure_api.Models;
-using JsonRepairUtils;
+using NureCistBot.JsonParsers;
 
 namespace nure_api.Handlers;
 
 public class ScheduleHandler
 {
-    private static string getType(int id)
+    private static string getType(int? id)
     {
         if (id == 10 || id == 12)
         {
@@ -57,7 +57,7 @@ public class ScheduleHandler
         return null;
     }
 
-    private static Subject? findSubjectById(dynamic subjects, int id)
+    private static Subject? findSubjectById(ParseSubject[] subjects, int? id)
     {
         foreach (var subject in subjects)
         {
@@ -66,8 +66,8 @@ public class ScheduleHandler
                 return new Subject()
                 {
                     Id = subject.id,
-                    Title = subject.title,
-                    Brief = subject.brief
+                    Brief = subject.brief,
+                    Title = subject.title
                 };
             }
         }
@@ -75,52 +75,26 @@ public class ScheduleHandler
         return null; // якщо клас з таким ідентифікатором не знайдено
     }
 
-    private static Teacher? findTeacherById(dynamic teachers, int id)
+    private static Teacher? findTeacherById(Teacher[] teachers, int id)
     {
-        string FullName = "";
-        string ShortName = "";
-        string Schedule = "";
-        using (var context = new Context())
-        {
-            FullName = context.Teachers.Find(id).FullName;
-            ShortName = context.Teachers.Find(id).ShortName;
-            Schedule = context.Teachers.Find(id).Schedule;
-        }
         foreach (var teacher in teachers)
         {
-            if (teacher == id)
+            if (teacher.Id == id)
             {
-                return new Teacher()
-                {
-                    Id = teacher,
-                    FullName = FullName,
-                    ShortName = ShortName
-                };
+                return teacher;
             }
         }
 
         return null; // якщо клас з таким ідентифікатором не знайдено
     }
 
-    private static Group? findGroupById(dynamic groups, int id)
+    private static Group? findGroupById(Group[] groups, int id)
     {
         foreach (var group in groups)
         {
-            string Name = "";
-            string Schedule = "";
-            using (var context = new Context())
+            if (group.Id == id)
             {
-                Name = context.Groups.Find(id).Name;
-                Schedule = context.Groups.Find(id).Schedule;
-            }
-            if (group.ToObject<int>() == id)
-            {
-                return new Group()
-                {
-                    Id = group.ToObject<int>(),
-                    Name = Name,
-                    Schedule = Schedule
-                };
+                return group;
             }
         }
 
@@ -166,8 +140,6 @@ public class ScheduleHandler
         List<Auditory> auditories = new List<Auditory>();
         List<Teacher> teachers = new List<Teacher>();
 
-        var jsonRepair = new JsonRepair();
-
         using (var context = new Context())
         {
             groups = context.Groups.ToList();
@@ -185,15 +157,17 @@ public class ScheduleHandler
                 {
                     try
                     {
-                        var json = jsonRepair.Repair(Download(group.Id, 1));
-                        var parsed = Parse(json);
-                        group.Schedule = JsonConvert.SerializeObject(parsed);
+                        var jsonT = JsonFixers.TryFix(Download(group.Id, 1));
+                        var parsedT = Parse(jsonT);
+                        group.Schedule = JsonConvert.SerializeObject(parsedT);
                         group.lastUpdated = DateTime.Now;
+                        context.SaveChanges();
                     }
                     catch (Exception e)
                     {
                         group.Schedule = "[]";
                         group.lastUpdated = DateTime.Now;
+                        context.SaveChanges();
                     }
                 }
             }
@@ -209,15 +183,17 @@ public class ScheduleHandler
                 {
                     try
                     {
-                        var json = jsonRepair.Repair(Download(teacher.Id, 2));
+                        var json = JsonFixers.TryFix(Download(teacher.Id, 2));
                         var parsed = Parse(json);
                         teacher.Schedule = JsonConvert.SerializeObject(parsed);
                         teacher.lastUpdated = DateTime.Now;
+                        context.SaveChanges();
                     }
                     catch (Exception e)
                     {
                         teacher.Schedule = "[]";
                         teacher.lastUpdated = DateTime.Now;
+                        context.SaveChanges();
                     }
                 }
             }
@@ -232,34 +208,35 @@ public class ScheduleHandler
                 {
                     try
                     {
-                        var json = jsonRepair.Repair(Download(auditory.Id, 2));
+                        var json = JsonFixers.TryFix(Download(auditory.Id, 2));
                         var parsed = Parse(json);
                         auditory.Schedule = JsonConvert.SerializeObject(parsed);
                         auditory.lastUpdated = DateTime.Now;
+                        context.SaveChanges();
                     }
                     catch (Exception e)
                     {
                         auditory.Schedule = "[]";
                         auditory.lastUpdated = DateTime.Now;
+                        context.SaveChanges();
                     }
                 }
             }
-            context.SaveChanges();
         }
     }
 
     private static List<Event> Parse(string json)
     {
         List<Event> pairs = new List<Event>();
-        var events = JsonConvert.DeserializeObject<dynamic>(json);
+        var events = JsonConvert.DeserializeObject<ScheduleGroup>(json);
 
         foreach (var lesson in events.events)
         {
             Event pair = new Event();
-            pair.NumberPair = lesson.number_pair.ToObject<int>();
-            pair.StartTime = lesson.start_time.ToObject<long>();
-            pair.EndTime = lesson.end_time.ToObject<long>();
-            pair.Type = getType(lesson.type.ToObject<int>());
+            pair.NumberPair = lesson.number_pair;
+            pair.StartTime = lesson.start_time;
+            pair.EndTime = lesson.end_time;
+            pair.Type = getType(lesson.type);
 
             var auditory = getAuditory(lesson.auditory.ToString());
             if (auditory != null)
@@ -275,9 +252,9 @@ public class ScheduleHandler
                 };
             }
 
-            pair.Subject = findSubjectById(events.subjects, lesson.subject_id.ToObject<int>());
+            pair.Subject = findSubjectById(events.subjects, lesson.subject_id);
 
-            if (lesson.teachers.Count == 0)
+            if (lesson.teachers.Length == 0)
             {
                 pair.Teachers = new List<Teacher>();
             }
@@ -285,17 +262,19 @@ public class ScheduleHandler
             {
                 foreach (var teacher in lesson.teachers)
                 {
-                    pair.Teachers.Add(findTeacherById(lesson.teachers, teacher.ToObject<int>()));
+                    var context = new Context();
+                    pair.Teachers.Add(findTeacherById(context.Teachers.ToArray(), teacher));
                 }
             }
 
-            if (lesson.groups.Count == 0)
+            if (lesson.groups.Length == 0)
             { }
             else
             {
                 foreach (var group in lesson.groups)
                 {
-                    var findedGroup = findGroupById(lesson.groups, group.ToObject<int>());
+                    var context = new Context();
+                    var findedGroup = findGroupById(context.Groups.ToArray(), group);
                     pair.Groups.Add(findedGroup);
                 }
             }

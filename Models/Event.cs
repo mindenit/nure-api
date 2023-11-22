@@ -6,11 +6,11 @@ namespace nure_api.Models;
 
 public class Event
 {
-    public int NumberPair { get; set; }
+    public int? NumberPair { get; set; }
     public Subject? Subject { get; set; }
-    public long StartTime { get; set; }
-    public long EndTime { get; set; }
-    public Auditory Auditory { get; set; }
+    public long? StartTime { get; set; }
+    public long? EndTime { get; set; }
+    public Auditory? Auditory { get; set; }
     public string? Type { get; set; }
     public List<Teacher>? Teachers { get; set; } = new List<Teacher>();
     public List<Group>? Groups { get; set; } = new List<Group>();
