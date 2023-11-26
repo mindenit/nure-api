@@ -3,7 +3,20 @@ using nure_api;
 using nure_api.Models;
 using nure_api.Handlers;
 
+var  allowCORS = "_allowCORS";
+
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: allowCORS,
+        policy  =>
+        {
+            policy.WithOrigins("http://api.mindenit.tech",
+                "https://api.mindenit.tech", "http://localhost:3000");
+        });
+});
+
 var app = builder.Build();
 
 
@@ -58,5 +71,12 @@ app.MapGet("/schedule", async (HttpContext x) => {
     var json = JsonConvert.SerializeObject(ScheduleHandler.GetEvents(id, type, start_time, end_time), Formatting.Indented);
     return Results.Content(json, "application/json");
 });
+
+app.MapPost("/register", async (HttpContext x) =>
+{
+    
+});
+
+app.UseCors(allowCORS);
 
 app.Run();

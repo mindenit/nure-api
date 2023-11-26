@@ -16,8 +16,8 @@ public class GroupsHandler
 
     public static void Init()
     {
-        using (HttpClient httpClient = new HttpClient())
-        {
+        /*using (HttpClient httpClient = new HttpClient())
+        {*/
             var webRequest = WebRequest.Create("https://cist.nure.ua/ias/app/tt/P_API_GROUP_JSON") as HttpWebRequest;
 
             webRequest.ContentType = "application/json";
@@ -54,7 +54,7 @@ public class GroupsHandler
                     context.SaveChanges();
                 }
             }
-        }
+        /*}*/
     }
 
     public static List<Group> Get()
