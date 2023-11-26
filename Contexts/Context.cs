@@ -14,11 +14,4 @@ public class Context : DbContext
         optionsBuilder.UseNpgsql(
             File.ReadAllText("dbConnection"));
     }
-    
-    /*protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
-        modelBuilder.Entity<Group>().Property(m => m.Schedule).Is;
-
-        base.OnModelCreating(modelBuilder);
-    }*/
 }
