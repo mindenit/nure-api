@@ -12,8 +12,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy(name: allowCORS,
         policy  =>
         {
-            policy.WithOrigins("http://api.mindenit.tech",
-                "https://api.mindenit.tech", "http://localhost:3000");
+            policy.WithOrigins("*");
         });
 });
 
@@ -41,8 +40,8 @@ using (var context = new Context())
     }
 }
 
-ScheduleHandler.Init();
-Console.WriteLine("Schedule init complete");
+/*ScheduleHandler.Init();
+Console.WriteLine("Schedule init complete");*/
 
 app.MapGet("/", async (HttpContext x) => "Main page" );
 
@@ -72,10 +71,15 @@ app.MapGet("/schedule", async (HttpContext x) => {
     return Results.Content(json, "application/json");
 });
 
-app.MapPost("/register", async (HttpContext x) =>
+app.MapPost("/register", async (HttpContext context) =>
 {
-    
+    using (StreamReader reader = new StreamReader(context.Request.Body))
+    {
+        string requestBody = await reader.ReadToEndAsync();
+        Console.WriteLine(requestBody);
+    }
 });
+
 
 app.UseCors(allowCORS);
 
