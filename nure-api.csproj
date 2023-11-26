@@ -11,7 +11,7 @@
       <PackageReference Include="EntityFramework" Version="6.4.4" />
       <PackageReference Include="JsonRepairUtils" Version="0.0.2" />
       <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-      <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="7.0.0" />
+      <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="7.0.11" />
     </ItemGroup>
 
 </Project>
