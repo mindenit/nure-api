@@ -5,8 +5,8 @@ namespace nure_api.Models
 {
     public class Auditory
     {
-        public int Id { get; set; }
-        public string Name { get; set; }
+        public int id { get; set; }
+        public string name { get; set; }
         
         [JsonIgnore]
         public string Schedule { get; set; }
@@ -29,8 +29,8 @@ namespace nure_api.Models
                         {
                             auditories.Add(new Auditory
                             {
-                                Id = int.Parse(auditory.id.ToString()),
-                                Name = auditory.short_name.ToString(),
+                                id = int.Parse(auditory.id.ToString()),
+                                name = auditory.short_name.ToString(),
                                 Schedule = ""
                             });
                         }

@@ -49,7 +49,7 @@ public class ScheduleHandler
 
         foreach (var auditory in auditories)
         {
-            if (auditory.Name.ToUpper() == Name.ToUpper())
+            if (auditory.name.ToUpper() == Name.ToUpper())
             {
                 return auditory;
             }
@@ -66,9 +66,9 @@ public class ScheduleHandler
             {
                 return new Subject()
                 {
-                    Id = subject["id"].Value<int>(),
-                    Brief = subject["brief"].Value<string>(),
-                    Title = subject["title"].Value<string>()
+                    id = subject["id"].Value<int>(),
+                    brief = subject["brief"].Value<string>(),
+                    title = subject["title"].Value<string>()
                 };
             }
         }
@@ -84,9 +84,9 @@ public class ScheduleHandler
             {
                 return new Teacher()
                 {
-                    Id = teacher["id"].Value<int>(),
-                    ShortName = teacher["short_name"].Value<string>(),
-                    FullName = teacher["full_name"].Value<string>()
+                    id = teacher["id"].Value<int>(),
+                    shortName = teacher["short_name"].Value<string>(),
+                    fullName = teacher["full_name"].Value<string>()
                 };
             }
         }
@@ -102,8 +102,8 @@ public class ScheduleHandler
             {
                 return new Group()
                 {
-                    Id = group["id"].Value<int>(),
-                    Name = group["name"].Value<string>()
+                    id = group["id"].Value<int>(),
+                    name = group["name"].Value<string>()
                 };
             }
         }
@@ -160,13 +160,13 @@ public class ScheduleHandler
             {
                 var timeFromUpdate = (DateTime.UtcNow - group.lastUpdated).TotalHours;
 
-                Console.WriteLine($"{group.Name} - {timeFromUpdate}");
+                Console.WriteLine($"{group.name} - {timeFromUpdate}");
 
                 if (group.Schedule == "" || timeFromUpdate > 3)
                 {
                     try
                     {
-                        var json = JsonFixers.TryFix(Download(group.Id, 1));
+                        var json = JsonFixers.TryFix(Download(group.id, 1));
                         var parsed = Parse(json);
                         group.Schedule = JsonConvert.SerializeObject(parsed);
                         group.lastUpdated = DateTime.UtcNow;
@@ -186,13 +186,13 @@ public class ScheduleHandler
             {
                 var timeFromUpdate = (DateTime.UtcNow - teacher.lastUpdated).TotalHours;
 
-                Console.WriteLine($"{teacher.ShortName} - {timeFromUpdate}");
+                Console.WriteLine($"{teacher.shortName} - {timeFromUpdate}");
 
                 if (teacher.Schedule == "" || timeFromUpdate > 3)
                 {
                     try
                     {
-                        var json = JsonFixers.TryFix(Download(teacher.Id, 2));
+                        var json = JsonFixers.TryFix(Download(teacher.id, 2));
                         var parsed = Parse(json);
                         teacher.Schedule = JsonConvert.SerializeObject(parsed);
                         teacher.lastUpdated = DateTime.UtcNow;
@@ -211,13 +211,13 @@ public class ScheduleHandler
             {
                 var timeFromUpdate = (DateTime.UtcNow - auditory.lastUpdated).TotalHours;
 
-                Console.WriteLine($"{auditory.Name} - {timeFromUpdate}");
+                Console.WriteLine($"{auditory.name} - {timeFromUpdate}");
 
                 if (auditory.Schedule == "" || timeFromUpdate > 3)
                 {
                     try
                     {
-                        var json = JsonFixers.TryFix(Download(auditory.Id, 2));
+                        var json = JsonFixers.TryFix(Download(auditory.id, 2));
                         var parsed = Parse(json);
                         auditory.Schedule = JsonConvert.SerializeObject(parsed);
                         auditory.lastUpdated = DateTime.UtcNow;
@@ -243,24 +243,24 @@ public class ScheduleHandler
         Parallel.ForEach(events["events"], lesson =>
         {
             Event pair = new Event();
-            pair.NumberPair = lesson["number_pair"].Value<int>();
-            pair.StartTime = lesson["start_time"].Value<long>();
-            pair.EndTime = lesson["end_time"].Value<long>();
-            pair.Type = getType(lesson["type"].Value<int>());
+            pair.numberPair = lesson["number_pair"].Value<int>();
+            pair.startTime = lesson["start_time"].Value<long>();
+            pair.endTime = lesson["end_time"].Value<long>();
+            pair.type = getType(lesson["type"].Value<int>());
 
-            pair.Auditory = lesson["auditory"].Value<string>();
+            pair.auditory = lesson["auditory"].Value<string>();
 
-            pair.Subject = findSubjectById(events["subjects"], lesson["subject_id"].Value<int>());
+            pair.subject = findSubjectById(events["subjects"], lesson["subject_id"].Value<int>());
 
             if (lesson["teachers"].Children().Count() == 0)
             {
-                pair.Teachers = new List<Teacher>();
+                pair.teachers = new List<Teacher>();
             }
             else
             {
                 Parallel.ForEach(lesson["teachers"], teacher =>
                 {
-                    pair.Teachers.Add(findTeacherById(events["teachers"], teacher.Value<int>()));
+                    pair.teachers.Add(findTeacherById(events["teachers"], teacher.Value<int>()));
                 });
             }
 
@@ -272,14 +272,14 @@ public class ScheduleHandler
                 Parallel.ForEach(lesson["groups"], group =>
                 {
                     var findedGroup = findGroupById(events["groups"], group.Value<int>());
-                    pair.Groups.Add(findedGroup);
+                    pair.groups.Add(findedGroup);
                 });
             }
 
             pairs.Add(pair);
         });
         
-        return pairs.OrderBy(x => x.StartTime).ToList();
+        return pairs.OrderBy(x => x.startTime).ToList();
     }
 
     public static List<Event> GetEvents(long Id, string Type, long StartTime, long EndTime)
@@ -289,7 +289,7 @@ public class ScheduleHandler
             case "group":
                 using (var context = new Context())
                 {
-                    Group group = context.Groups.ToList().Find(x => x.Id == Id);
+                    Group group = context.Groups.ToList().Find(x => x.id == Id);
                     
                     var timeFromUpdate = (DateTime.UtcNow - group.lastUpdated).TotalHours;
 
@@ -297,7 +297,7 @@ public class ScheduleHandler
                     {
                         try
                         {
-                            var json = JsonFixers.TryFix(Download(group.Id, 1));
+                            var json = JsonFixers.TryFix(Download(group.id, 1));
                             var parsed = Parse(json);
                             group.Schedule = JsonConvert.SerializeObject(parsed);
                             group.lastUpdated = DateTime.UtcNow;
@@ -313,8 +313,8 @@ public class ScheduleHandler
 
                     List<Event> schedule = JsonConvert.DeserializeObject<List<Event>>(group.Schedule);
                     
-                    return schedule.Where(e => e.StartTime >= StartTime && e.StartTime <= EndTime)
-                        .OrderBy(x => x.StartTime)
+                    return schedule.Where(e => e.startTime >= StartTime && e.startTime <= EndTime)
+                        .OrderBy(x => x.startTime)
                         .ToList();
                 }
 
@@ -322,7 +322,7 @@ public class ScheduleHandler
             case "teacher":
                 using (var context = new Context())
                 {
-                    var teacher = context.Teachers.ToList().Find(x => x.Id == Id);
+                    var teacher = context.Teachers.ToList().Find(x => x.id == Id);
                     
                     var timeFromUpdate = (DateTime.UtcNow - teacher.lastUpdated).TotalHours;
 
@@ -330,7 +330,7 @@ public class ScheduleHandler
                     {
                         try
                         {
-                            var json = JsonFixers.TryFix(Download(teacher.Id, 2));
+                            var json = JsonFixers.TryFix(Download(teacher.id, 2));
                             var parsed = Parse(json);
                             teacher.Schedule = JsonConvert.SerializeObject(parsed);
                             teacher.lastUpdated = DateTime.UtcNow;
@@ -346,8 +346,8 @@ public class ScheduleHandler
 
                     var schedule = JsonConvert.DeserializeObject<List<Event>>(teacher.Schedule);
 
-                    return schedule.Where(e => e.StartTime >= StartTime && e.StartTime <= EndTime)
-                        .OrderBy(x => x.StartTime)
+                    return schedule.Where(e => e.startTime >= StartTime && e.startTime <= EndTime)
+                        .OrderBy(x => x.startTime)
                         .ToList();
                 }
 
@@ -355,17 +355,17 @@ public class ScheduleHandler
             case "auditory":
                 using (var context = new Context())
                 {
-                    var auditory = context.Auditories.ToList().Find(x => x.Id == Id);
+                    var auditory = context.Auditories.ToList().Find(x => x.id == Id);
 
                     var timeFromUpdate = (DateTime.UtcNow - auditory.lastUpdated).TotalHours;
 
-                    Console.WriteLine($"{auditory.Name} - {timeFromUpdate}");
+                    Console.WriteLine($"{auditory.name} - {timeFromUpdate}");
 
                     if (auditory.Schedule == "" || timeFromUpdate > 5)
                     {
                         try
                         {
-                            var json = JsonFixers.TryFix(Download(auditory.Id, 3));
+                            var json = JsonFixers.TryFix(Download(auditory.id, 3));
                             var parsed = Parse(json);
                             auditory.Schedule = JsonConvert.SerializeObject(parsed);
                             auditory.lastUpdated = DateTime.UtcNow;
@@ -381,8 +381,8 @@ public class ScheduleHandler
                     
                     var schedule = JsonConvert.DeserializeObject<List<Event>>(auditory.Schedule);
 
-                    return schedule.Where(e => e.StartTime >= StartTime && e.StartTime <= EndTime)
-                        .OrderBy(x => x.StartTime)
+                    return schedule.Where(e => e.startTime >= StartTime && e.startTime <= EndTime)
+                        .OrderBy(x => x.startTime)
                         .ToList();
                 }
 

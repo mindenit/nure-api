@@ -4,9 +4,9 @@ namespace nure_api.Models;
 
 public class Teacher
 {
-    public int Id { get; set; }
-    public string ShortName { get; set; }
-    public string FullName { get; set; }
+    public int id { get; set; }
+    public string shortName { get; set; }
+    public string fullName { get; set; }
     
     [JsonIgnore]
     public string Schedule { get; set; }
@@ -33,7 +33,7 @@ public class Teacher
                             {
                                 foreach (var teacher in department.teachers)
                                 {
-                                    teachers.Add(new Teacher(){Id = teacher.id, FullName = teacher.full_name, ShortName = teacher.short_name, Schedule = ""});
+                                    teachers.Add(new Teacher(){id = teacher.id, fullName = teacher.full_name, shortName = teacher.short_name, Schedule = ""});
                                 }
                             }
                             if (department.departments is not null)
@@ -44,7 +44,7 @@ public class Teacher
                                     {
                                         foreach (var teacher in childDepartment.teachers)
                                         {
-                                            teachers.Add(new Teacher(){Id = teacher.id, FullName = teacher.full_name, ShortName = teacher.short_name, Schedule = ""});
+                                            teachers.Add(new Teacher(){id = teacher.id, fullName = teacher.full_name, shortName = teacher.short_name, Schedule = ""});
                                         }
                                     }
                                 }

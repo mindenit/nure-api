@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using nure_api;
 using nure_api.Models;
@@ -76,9 +77,11 @@ app.MapPost("/register", async (HttpContext context) =>
     using (StreamReader reader = new StreamReader(context.Request.Body))
     {
         string requestBody = await reader.ReadToEndAsync();
-        Console.WriteLine(requestBody);
+        Console.WriteLine(JsonConvert.SerializeObject(requestBody));
     }
 });
+
+
 
 
 app.UseCors(allowCORS);
