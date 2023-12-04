@@ -170,13 +170,13 @@ public class ScheduleHandler
                         var parsed = Parse(json);
                         group.Schedule = JsonConvert.SerializeObject(parsed);
                         group.lastUpdated = DateTime.UtcNow;
-                        context.SaveChangesAsync();
+                        context.SaveChanges();
                     }
                     catch (Exception e)
                     {
                         group.Schedule = "[]";
                         group.lastUpdated = DateTime.UtcNow;
-                        context.SaveChangesAsync();
+                        context.SaveChanges();
                     }
                 }
             }
@@ -301,13 +301,13 @@ public class ScheduleHandler
                             var parsed = Parse(json);
                             group.Schedule = JsonConvert.SerializeObject(parsed);
                             group.lastUpdated = DateTime.UtcNow;
-                            context.SaveChangesAsync();
+                            context.SaveChanges();
                         }
                         catch (Exception e)
                         {
                             group.Schedule = "[]";
                             group.lastUpdated = DateTime.UtcNow;
-                            context.SaveChangesAsync();
+                            context.SaveChanges();
                         }
                     }
 
@@ -334,13 +334,13 @@ public class ScheduleHandler
                             var parsed = Parse(json);
                             teacher.Schedule = JsonConvert.SerializeObject(parsed);
                             teacher.lastUpdated = DateTime.UtcNow;
-                            context.SaveChangesAsync();
+                            context.SaveChanges();
                         }
                         catch (Exception e)
                         {
                             teacher.Schedule = "[]";
                             teacher.lastUpdated = DateTime.UtcNow;
-                            context.SaveChangesAsync();
+                            context.SaveChanges();
                         }
                     }
 
@@ -369,13 +369,13 @@ public class ScheduleHandler
                             var parsed = Parse(json);
                             auditory.Schedule = JsonConvert.SerializeObject(parsed);
                             auditory.lastUpdated = DateTime.UtcNow;
-                            context.SaveChangesAsync();
+                            context.SaveChanges();
                         }
                         catch (Exception e)
                         {
                             auditory.Schedule = "[]";
                             auditory.lastUpdated = DateTime.UtcNow;
-                            context.SaveChangesAsync();
+                            context.SaveChanges();
                         }
                     }
                     
