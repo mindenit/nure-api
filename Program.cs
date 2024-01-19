@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using nure_api;
 using nure_api.Models;
@@ -16,6 +18,17 @@ builder.Services.AddCors(options =>
             policy.WithOrigins("*");
         });
 });
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+builder.Services.AddDbContext<Context>( options =>
+    options.UseNpgsql(File.ReadAllText("dbConnection")));
+
+builder.Services.AddAuthorization();
+
+builder.Services.AddIdentityApiEndpoints<IdentityUser>()
+    .AddEntityFrameworkStores<Context>();
 
 var app = builder.Build();
 
@@ -41,8 +54,8 @@ using (var context = new Context())
     }
 }
 
-/*ScheduleHandler.Init();
-Console.WriteLine("Schedule init complete");*/
+//ScheduleHandler.Init();
+Console.WriteLine("Schedule init complete");
 
 app.MapGet("/", async (HttpContext x) => "Main page" );
 
@@ -83,9 +96,12 @@ app.MapPost("/register", async (HttpContext context) =>
     }
 });
 
-
-
-
 app.UseCors(allowCORS);
+
+app.UseSwagger();
+app.UseSwaggerUI();
+
+app.MapIdentityApi<IdentityUser>();
+app.UseAuthorization();
 
 app.Run();

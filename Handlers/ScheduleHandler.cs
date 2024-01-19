@@ -156,58 +156,68 @@ public class ScheduleHandler
             auditories = context.Auditories.ToList();
             teachers = context.Teachers.ToList();
 
-            foreach (var group in groups)
+            /*Thread updateGroups = new Thread(x =>
             {
-                var timeFromUpdate = (DateTime.UtcNow - group.lastUpdated).TotalHours;
-
-                Console.WriteLine($"{group.name} - {timeFromUpdate}");
-
-                if (group.Schedule == "" || timeFromUpdate > 3)
+                foreach (var group in groups)
                 {
-                    try
+                    var timeFromUpdate = (DateTime.UtcNow - group.lastUpdated).TotalHours;
+
+                    Console.WriteLine($"{group.name} - {timeFromUpdate}");
+
+                    if (group.Schedule == "" || timeFromUpdate > 3)
                     {
-                        var json = JsonFixers.TryFix(Download(group.id, 1));
-                        var parsed = Parse(json);
-                        group.Schedule = JsonConvert.SerializeObject(parsed);
-                        group.lastUpdated = DateTime.UtcNow;
-                        context.SaveChanges();
-                    }
-                    catch (Exception e)
-                    {
-                        group.Schedule = "[]";
-                        group.lastUpdated = DateTime.UtcNow;
-                        context.SaveChanges();
+                        try
+                        {
+                            var json = JsonFixers.TryFix(Download(group.id, 1));
+                            var parsed = Parse(json);
+                            group.Schedule = JsonConvert.SerializeObject(parsed);
+                            group.lastUpdated = DateTime.UtcNow;
+                        }
+                        catch (Exception e)
+                        {
+                            group.Schedule = "[]";
+                            group.lastUpdated = DateTime.UtcNow;
+                        }
                     }
                 }
-            }
+            });
 
-
-            foreach (var teacher in teachers)
+            Thread updateTeachers = new Thread(x =>
             {
-                var timeFromUpdate = (DateTime.UtcNow - teacher.lastUpdated).TotalHours;
-
-                Console.WriteLine($"{teacher.shortName} - {timeFromUpdate}");
-
-                if (teacher.Schedule == "" || timeFromUpdate > 3)
+                foreach (var teacher in teachers)
                 {
-                    try
+                    var timeFromUpdate = (DateTime.UtcNow - teacher.lastUpdated).TotalHours;
+
+                    Console.WriteLine($"{teacher.shortName} - {timeFromUpdate}");
+
+                    if (teacher.Schedule == "" || timeFromUpdate > 3)
                     {
-                        var json = JsonFixers.TryFix(Download(teacher.id, 2));
-                        var parsed = Parse(json);
-                        teacher.Schedule = JsonConvert.SerializeObject(parsed);
-                        teacher.lastUpdated = DateTime.UtcNow;
-                        context.SaveChanges();
-                    }
-                    catch (Exception e)
-                    {
-                        teacher.Schedule = "[]";
-                        teacher.lastUpdated = DateTime.UtcNow;
-                        context.SaveChanges();
+                        try
+                        {
+                            var json = JsonFixers.TryFix(Download(teacher.id, 2));
+                            var parsed = Parse(json);
+                            teacher.Schedule = JsonConvert.SerializeObject(parsed);
+                            teacher.lastUpdated = DateTime.UtcNow;
+                        }
+                        catch (Exception e)
+                        {
+                            teacher.Schedule = "[]";
+                            teacher.lastUpdated = DateTime.UtcNow;
+                        }
                     }
                 }
-            }
+            });
+            
+            updateGroups.Start();
+            updateTeachers.Start();
 
-            foreach (var auditory in auditories)
+            while (updateGroups.ThreadState == ThreadState.Running || updateTeachers.ThreadState == ThreadState.Running)
+            {
+                Console.WriteLine(updateGroups.ThreadState + " | " + updateTeachers.ThreadState);
+            }*/
+            
+
+            Parallel.ForEach(auditories, new ParallelOptions { MaxDegreeOfParallelism = 4 }, auditory =>
             {
                 var timeFromUpdate = (DateTime.UtcNow - auditory.lastUpdated).TotalHours;
 
@@ -221,16 +231,17 @@ public class ScheduleHandler
                         var parsed = Parse(json);
                         auditory.Schedule = JsonConvert.SerializeObject(parsed);
                         auditory.lastUpdated = DateTime.UtcNow;
-                        context.SaveChanges();
                     }
                     catch (Exception e)
                     {
                         auditory.Schedule = "[]";
                         auditory.lastUpdated = DateTime.UtcNow;
-                        context.SaveChanges();
                     }
                 }
-            }
+            });
+
+            
+            context.SaveChanges();
         }
     }
 
