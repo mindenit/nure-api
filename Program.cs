@@ -54,7 +54,7 @@ using (var context = new Context())
     }
 }
 
-//ScheduleHandler.Init();
+ScheduleHandler.Init();
 Console.WriteLine("Schedule init complete");
 
 app.MapGet("/", async (HttpContext x) => "Main page" );
