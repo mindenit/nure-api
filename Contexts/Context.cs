@@ -4,7 +4,7 @@ using nure_api.Models;
 
 namespace nure_api;
 
-public class Context : IdentityDbContext
+public class Context : IdentityDbContext<AuthUser>
 {
     public DbSet<Group> Groups { get; set; }
     public DbSet<Teacher> Teachers { get; set; }

@@ -156,7 +156,7 @@ public class ScheduleHandler
             auditories = context.Auditories.ToList();
             teachers = context.Teachers.ToList();
             
-            Parallel.ForEach(teachers, new ParallelOptions { MaxDegreeOfParallelism = 6 }, teacher =>
+            Parallel.ForEach(teachers, new ParallelOptions { MaxDegreeOfParallelism = 4096 }, teacher =>
             {
                 var timeFromUpdate = (DateTime.UtcNow - teacher.lastUpdated).TotalHours;
 
@@ -179,7 +179,7 @@ public class ScheduleHandler
                 }
             });
 
-            Parallel.ForEach(auditories, new ParallelOptions { MaxDegreeOfParallelism = 6 }, auditory =>
+            Parallel.ForEach(auditories, new ParallelOptions { MaxDegreeOfParallelism = 4096 }, auditory =>
             {
                 var timeFromUpdate = (DateTime.UtcNow - auditory.lastUpdated).TotalHours;
 
@@ -203,7 +203,7 @@ public class ScheduleHandler
             });
 
 
-            Parallel.ForEach(groups, new ParallelOptions { MaxDegreeOfParallelism = 6 }, group =>
+            Parallel.ForEach(groups, new ParallelOptions { MaxDegreeOfParallelism = 4096 }, group =>
             {
                 var timeFromUpdate = (DateTime.UtcNow - group.lastUpdated).TotalHours;
 
