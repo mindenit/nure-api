@@ -10,20 +10,22 @@ using nure_api.Handlers;
 using nure_api.Services;
 using Microsoft.OpenApi.Models;
 
-var  allowCORS = "_allowCORS";
+var allowCORS = "_allowCORS";
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(name: allowCORS,
-        policy  =>
+        policy =>
         {
             policy.WithOrigins("*");
         });
 });
 
 builder.Services.AddEndpointsApiExplorer();
+
+
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
@@ -38,13 +40,13 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 
-    // using System.Reflection;
-    var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-    Console.WriteLine(xmlFilename);
-    options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
+    //set the comments path for the swagger json and ui
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    options.IncludeXmlComments(xmlPath);
 });
 
-builder.Services.AddDbContext<Context>( options =>
+builder.Services.AddDbContext<Context>(options =>
     options.UseNpgsql(File.ReadAllText("dbConnection")));
 
 builder.Services.AddAuthorization();
@@ -82,32 +84,59 @@ using (var context = new Context())
 ScheduleHandler.Init();
 Console.WriteLine("Schedule init complete");
 
-app.MapGet("/", async (HttpContext x) => "Main page" ).WithOpenApi();
+// Redirect to swagger
+app.MapGet("/", async (HttpContext x) =>
+{
+    x.Response.Redirect("/swagger");
+    return Results.Ok();
+});
 
 /// <summary>
 /// List all groups
 /// </summary>
-app.MapGet("/groups", async (HttpContext x) => {
+
+app.MapGet("/groups", async (HttpContext x) =>
+{
     var json = JsonConvert.SerializeObject(GroupsHandler.Get(), Formatting.Indented);
     return Results.Content(json, "application/json");
-}).WithOpenApi();
+}).Produces<IList<Group>>()
+.WithOpenApi(generatedOperation =>
+{
+    generatedOperation.Description = "List all groups";
+    generatedOperation.Summary = "List all groups";
+    return generatedOperation;
+});
 
 
 /// <summary>
 /// List all teachers
 /// </summary>
-app.MapGet("/teachers", async (HttpContext x) => {
+app.MapGet("/teachers", async (HttpContext x) =>
+{
     var json = JsonConvert.SerializeObject(TeachersHandler.Get(), Formatting.Indented);
     return Results.Content(json, "application/json");
-}).WithOpenApi();
+}).WithOpenApi(generatedOperation =>
+{
+    generatedOperation.Description = "List all teachers";
+    generatedOperation.Summary = "List all teachers";
+    return generatedOperation;
+})
+.Produces<IList<Teacher>>();
 
 /// <summary>
 /// List all auditories
 /// </summary>
-app.MapGet("/auditories", async (HttpContext x) => {
+app.MapGet("/auditories", async (HttpContext x) =>
+{
     var json = JsonConvert.SerializeObject(AuditoriesHandler.Get(), Formatting.Indented);
     return Results.Content(json, "application/json");
-}).WithOpenApi();
+}).WithOpenApi(generatedOperation =>
+{
+    generatedOperation.Description = "List all auditories";
+    generatedOperation.Summary = "List all auditories";
+    return generatedOperation;
+})
+.Produces<IList<Auditory>>();
 
 /// <summary>
 /// Get schedule for group
@@ -117,7 +146,8 @@ app.MapGet("/auditories", async (HttpContext x) => {
 /// <param name="start_time">Start time</param>
 /// <param name="end_time">End time</param>
 /// <returns></returns>
-app.MapGet("/schedule", async (HttpContext x) => {
+app.MapGet("/schedule", async (HttpContext x) =>
+{
     var id = long.Parse(x.Request.Query["id"]);
     var type = x.Request.Query["type"];
     var start_time = long.Parse(x.Request.Query["start_time"]);
@@ -126,12 +156,59 @@ app.MapGet("/schedule", async (HttpContext x) => {
     var body = await reader.ReadToEndAsync();
     var json = JsonConvert.SerializeObject(ScheduleHandler.GetEvents(id, type, start_time, end_time), Formatting.Indented);
     return Results.Content(json, "application/json");
-}).WithOpenApi();
+}).WithOpenApi(genOp =>
+{
+    genOp.Description = "Get schedule for group";
+    genOp.Summary = "Get schedule for group";
+    genOp.Parameters.Add(new OpenApiParameter
+    {
+        Name = "id",
+        In = ParameterLocation.Query,
+        Required = true,
+        Schema = new OpenApiSchema
+        {
+            Type = "integer"
+        }
+    });
+    genOp.Parameters.Add(new OpenApiParameter
+    {
+        Name = "type",
+        In = ParameterLocation.Query,
+        Required = true,
+        Schema = new OpenApiSchema
+        {
+            Type = "string"
+        }
+    });
+    genOp.Parameters.Add(new OpenApiParameter
+    {
+        Name = "start_time",
+        In = ParameterLocation.Query,
+        Required = true,
+        Schema = new OpenApiSchema
+        {
+            Type = "integer"
+        }
+    });
+    genOp.Parameters.Add(new OpenApiParameter
+    {
+        Name = "end_time",
+        In = ParameterLocation.Query,
+        Required = true,
+        Schema = new OpenApiSchema
+        {
+            Type = "integer"
+        }
+    });
+    return genOp;
+})
+.Produces<IList<Event>>();
 
 /// <summary>
 /// Get user info, requires authorization with Bearer token
 /// </summary>
-app.MapGet("/user", [Authorize] async (HttpContext x, UserManager<AuthUser> userManager) => {
+app.MapGet("/user", [Authorize] async (HttpContext x, UserManager<AuthUser> userManager) =>
+{
     var user = await userManager.GetUserAsync(x.User);
     if (user == null)
     {
@@ -139,7 +216,13 @@ app.MapGet("/user", [Authorize] async (HttpContext x, UserManager<AuthUser> user
     }
     var json = JsonConvert.SerializeObject(user, Formatting.Indented);
     return Results.Content(json, "application/json");
-}).WithOpenApi();
+}).WithOpenApi(genOp =>
+{
+    genOp.Description = "Get user info, Example: ```curl -X GET -H \"Content - Type: application/json\" -H \"Authorization: Bearer your_token\" http://api.mindenit.tech/user```";
+    genOp.Summary = "Get user info";
+    return genOp;
+})
+.Produces<AuthUser>();
 
 /// <summary>
 /// Add group to user, requires authorization with Bearer token
@@ -156,7 +239,8 @@ app.MapGet("/user", [Authorize] async (HttpContext x, UserManager<AuthUser> user
 ///     }'
 ///
 /// </remarks>
-app.MapPost("/user/addgroup", [Authorize] async (HttpContext x, UserManager<AuthUser> userManager) => {
+app.MapPost("/user/add", [Authorize] async (HttpContext x, UserManager<AuthUser> userManager) =>
+{
     var user = await userManager.GetUserAsync(x.User);
     if (user == null)
     {
@@ -165,23 +249,33 @@ app.MapPost("/user/addgroup", [Authorize] async (HttpContext x, UserManager<Auth
     using var reader = new StreamReader(x.Request.Body);
     var body = await reader.ReadToEndAsync();
     var group = JsonConvert.DeserializeObject<Group>(body);
-    if (!DbUtil.CheckGroupExists(group.name))
-    {
-        return Results.BadRequest("Group not found");
-    }
-    
+    // if (!DbUtil.CheckGroupExists(group.name))
+    // {
+    //     return Results.BadRequest("Group not found");
+    // }
+
     if (user.Groups == null)
     {
         user.Groups = new List<string>();
     }
 
     user.Groups.Add(body);
-    
+
     await userManager.UpdateAsync(user);
-    return Results.Ok("Group added");
-}).WithOpenApi();
-
-
+    return Results.Ok("Schedule added");
+}).WithOpenApi(genOp =>
+{
+    genOp.Description = "Add schedule to user, requires authorization with Bearer token. Example: ```curl -X POST 'http://api.mindenit.tech/user/addgroup' \" +\n" +
+    "-H 'Authorization: Bearer your_auth_token' \" +\n" +
+    "-H 'Content-Type: application/json' \" +\n" +
+    "   -d '{" + "\n" +
+    "       \"id\": \"group_id\"," + "\n" +
+    "       \"name\": \"group_name" + "\n" +
+    "   }'```";
+    genOp.Summary = "Add schedule to user";
+    return genOp;
+})
+.Produces<string>();
 /// <summary>
 /// Remove group from user, requires authorization with Bearer token
 /// </summary>
@@ -197,7 +291,8 @@ app.MapPost("/user/addgroup", [Authorize] async (HttpContext x, UserManager<Auth
 ///     }'
 ///
 /// </remarks>
-app.MapPost("/user/removegroup", [Authorize] async (HttpContext x, UserManager<AuthUser> userManager) => {
+app.MapPost("/user/removegroup", [Authorize] async (HttpContext x, UserManager<AuthUser> userManager) =>
+{
     var user = await userManager.GetUserAsync(x.User);
     if (user == null)
     {
@@ -206,23 +301,36 @@ app.MapPost("/user/removegroup", [Authorize] async (HttpContext x, UserManager<A
     using var reader = new StreamReader(x.Request.Body);
     var body = await reader.ReadToEndAsync();
     var group = JsonConvert.DeserializeObject<Group>(body);
-    if (!DbUtil.CheckGroupExists(group.name))
-    {
-        return Results.BadRequest("Group not found");
-    }
-    
+    // if (!DbUtil.CheckGroupExists(group.name))
+    // {
+    //     return Results.BadRequest("Group not found");
+    // }
+
     if (user.Groups == null)
     {
         user.Groups = new List<string>();
     }
 
     user.Groups.Remove(body);
-    
-    await userManager.UpdateAsync(user);
-    return Results.Ok("Group removed");
-}).WithOpenApi();
 
-app.MapPost("/user/destroy", [Authorize] async (HttpContext x, UserManager<AuthUser> userManager) => {
+    await userManager.UpdateAsync(user);
+    return Results.Ok("Schedule removed");
+}).WithOpenApi(genOp =>
+{
+    genOp.Description = "Remove schedule from user, requires authorization with Bearer token. Example: ```curl -X POST 'http://api.mindenit.tech/user/removegroup' \" +\n" +
+    "-H 'Authorization: Bearer your_auth_token' \" +\n" +
+    "-H 'Content-Type: application/json' \" +\n" +
+    "   -d '{" + "\n" +
+    "       \"id\": \"group_id\"," + "\n" +
+    "       \"name\": \"group_name" + "\n" +
+    "   }'```";
+    genOp.Summary = "Remove schedule from user";
+    return genOp;
+})
+.Produces<string>();
+
+app.MapPost("/user/destroy", [Authorize] async (HttpContext x, UserManager<AuthUser> userManager) =>
+{
     var user = await userManager.GetUserAsync(x.User);
     if (user == null)
     {
@@ -230,7 +338,12 @@ app.MapPost("/user/destroy", [Authorize] async (HttpContext x, UserManager<AuthU
     }
     await userManager.DeleteAsync(user);
     return Results.Ok("User deleted");
-}).WithOpenApi();
+}).WithOpenApi(genOp =>
+{
+    genOp.Description = "Delete user, requires authorization with Bearer token. Example: ```curl -X POST -H \"Content - Type: application/json\" -H \"Authorization: Bearer your_token\" http://api.mindenit.tech/user/destroy```";
+    genOp.Summary = "Delete user";
+    return genOp;
+});
 
 
 app.UseCors(allowCORS);
@@ -239,6 +352,9 @@ app.UseSwagger(options =>
 {
     options.SerializeAsV2 = true;
 });
+
+app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Mindenit API"));
+
 app.UseSwaggerUI();
 
 app.MapIdentityApi<AuthUser>();
