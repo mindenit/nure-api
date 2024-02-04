@@ -265,12 +265,12 @@ app.MapPost("/user/add", [Authorize] async (HttpContext x, UserManager<AuthUser>
     return Results.Ok("Schedule added");
 }).WithOpenApi(genOp =>
 {
-    genOp.Description = "Add schedule to user, requires authorization with Bearer token. Example: ```curl -X POST 'http://api.mindenit.tech/user/addgroup' \" +\n" +
+    genOp.Description = "Add schedule to user, requires authorization with Bearer token. Example: ```curl -X POST 'http://api.mindenit.tech/user/add' \" +\n" +
     "-H 'Authorization: Bearer your_auth_token' \" +\n" +
     "-H 'Content-Type: application/json' \" +\n" +
     "   -d '{" + "\n" +
-    "       \"id\": \"group_id\"," + "\n" +
-    "       \"name\": \"group_name" + "\n" +
+    "       \"id\": \"id\"," + "\n" +
+    "       \"name\": \"name" + "\n" +
     "   }'```";
     genOp.Summary = "Add schedule to user";
     return genOp;
@@ -291,7 +291,7 @@ app.MapPost("/user/add", [Authorize] async (HttpContext x, UserManager<AuthUser>
 ///     }'
 ///
 /// </remarks>
-app.MapPost("/user/removegroup", [Authorize] async (HttpContext x, UserManager<AuthUser> userManager) =>
+app.MapPost("/user/remove", [Authorize] async (HttpContext x, UserManager<AuthUser> userManager) =>
 {
     var user = await userManager.GetUserAsync(x.User);
     if (user == null)
@@ -317,12 +317,12 @@ app.MapPost("/user/removegroup", [Authorize] async (HttpContext x, UserManager<A
     return Results.Ok("Schedule removed");
 }).WithOpenApi(genOp =>
 {
-    genOp.Description = "Remove schedule from user, requires authorization with Bearer token. Example: ```curl -X POST 'http://api.mindenit.tech/user/removegroup' \" +\n" +
+    genOp.Description = "Remove schedule from user, requires authorization with Bearer token. Example: ```curl -X POST 'http://api.mindenit.tech/user/remove' \" +\n" +
     "-H 'Authorization: Bearer your_auth_token' \" +\n" +
     "-H 'Content-Type: application/json' \" +\n" +
     "   -d '{" + "\n" +
-    "       \"id\": \"group_id\"," + "\n" +
-    "       \"name\": \"group_name" + "\n" +
+    "       \"id\": \"id\"," + "\n" +
+    "       \"name\": \"name" + "\n" +
     "   }'```";
     genOp.Summary = "Remove schedule from user";
     return genOp;
