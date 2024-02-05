@@ -81,7 +81,7 @@ using (var context = new Context())
     }
 }
 
-//ScheduleHandler.Init();
+ScheduleHandler.Init();
 Console.WriteLine("Schedule init complete");
 
 // Redirect to swagger
