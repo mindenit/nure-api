@@ -6,6 +6,7 @@ project.lock.json
 nupkg/
 
 /Migrations
+/Properties
 
 /dbConnection
 
@@ -46,3 +47,4 @@ msbuild.log
 msbuild.err
 msbuild.wrn
 .config/dotnet-tools.json
+/Properties/

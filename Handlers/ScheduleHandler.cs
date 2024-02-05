@@ -118,6 +118,8 @@ public class ScheduleHandler
             var webRequest = WebRequest.Create($"https://cist.nure.ua/ias/app/tt/P_API_EVEN_JSON?" +
                                                $"type_id={Type}" +
                                                $"&timetable_id={Id}" +
+                                               $"&time_from=1693515600" +
+                                               $"&time_to=1725138000" +
                                                "&idClient=KNURESked") as HttpWebRequest;
 
             webRequest.ContentType = "application/json";
@@ -299,6 +301,7 @@ public class ScheduleHandler
                         }
                         catch (Exception e)
                         {
+                            Console.WriteLine(e);
                             group.Schedule = "[]";
                             group.lastUpdated = DateTime.UtcNow;
                             context.SaveChanges();

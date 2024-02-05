@@ -81,13 +81,13 @@ using (var context = new Context())
     }
 }
 
-ScheduleHandler.Init();
+//ScheduleHandler.Init();
 Console.WriteLine("Schedule init complete");
 
 // Redirect to swagger
 app.MapGet("/", async (HttpContext x) =>
 {
-    x.Response.Redirect("/swagger");
+    /*x.Response.Redirect("/swagger");*/
     return Results.Ok();
 });
 
@@ -202,7 +202,7 @@ app.MapGet("/schedule", async (HttpContext x) =>
     });
     return genOp;
 })
-.Produces<IList<Event>>();
+/*.Produces<IList<Event>>()*/;
 
 /// <summary>
 /// Get user info, requires authorization with Bearer token
