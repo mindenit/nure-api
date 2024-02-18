@@ -4,9 +4,20 @@ namespace nure_api.Services;
 
 public class DbUtil
 {
-    public static bool CheckGroupExists(string group)
+    public static bool CheckExists(Schedule item)
     {
         using var context = new Context();
-        return context.Groups.Any(g => g.name == group);
+        if(item.type == "group")
+        {
+            return context.Groups.Any(x => x.id == item.id);
+        }
+        if(item.type == "teacher")
+        {
+            return context.Teachers.Any(x => x.id == item.id);
+        }
+        else
+        {
+            return context.Auditories.Any(x => x.id == item.id);
+        }
     }
 }

@@ -4,5 +4,5 @@ namespace nure_api.Models;
 
 public class AuthUser: IdentityUser
 {
-    public List<string>? Groups { get; set; }
+    public List<string>? Schedules { get; set; }
 }

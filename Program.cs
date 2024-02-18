@@ -9,6 +9,7 @@ using nure_api.Models;
 using nure_api.Handlers;
 using nure_api.Services;
 using Microsoft.OpenApi.Models;
+using Serilog;
 
 var allowCORS = "_allowCORS";
 
@@ -22,15 +23,24 @@ builder.Services.AddCors(options =>
             policy.WithOrigins("*");
         });
 });
-
+builder.Host.UseSerilog();
 builder.Services.AddEndpointsApiExplorer();
 
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Debug()
+    .WriteTo.Console()
+    .WriteTo.File(
+        $"Logs/{DateTime.Now.Day}_{DateTime.Now.Month}_{DateTime.Now.Year}-{DateTime.Now.TimeOfDay}.txt",
+        rollingInterval: RollingInterval.Infinite)
+    .CreateLogger();
+
+Log.Information("Application started!");
 
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
     {
-        Version = "v0.8.4",
+        Version = "v0.9.0",
         Title = "Mindenit API",
         Description = "The NURE schedule API",
         License = new OpenApiLicense
@@ -65,13 +75,13 @@ using (var context = new Context())
     if (!context.Groups.Any())
     {
         GroupsHandler.Init();
-        Console.WriteLine("Groups init complete");
+        Log.Information("Groups init complete");
     }
 
     if (!context.Teachers.Any())
     {
         TeachersHandler.Init();
-        Console.WriteLine("Teachers init complete");
+        Log.Information("Teachers init complete");
     }
 
     if (!context.Auditories.Any())
@@ -82,14 +92,7 @@ using (var context = new Context())
 }
 
 ScheduleHandler.Init();
-Console.WriteLine("Schedule init complete");
-
-// Redirect to swagger
-app.MapGet("/", async (HttpContext x) =>
-{
-    /*x.Response.Redirect("/swagger");*/
-    return Results.Ok();
-});
+Log.Information("Schedule init complete");
 
 /// <summary>
 /// List all groups
@@ -202,7 +205,7 @@ app.MapGet("/schedule", async (HttpContext x) =>
     });
     return genOp;
 })
-/*.Produces<IList<Event>>()*/;
+.Produces<IList<Event>>();
 
 /// <summary>
 /// Get user info, requires authorization with Bearer token
@@ -248,18 +251,18 @@ app.MapPost("/user/add", [Authorize] async (HttpContext x, UserManager<AuthUser>
     }
     using var reader = new StreamReader(x.Request.Body);
     var body = await reader.ReadToEndAsync();
-    var group = JsonConvert.DeserializeObject<Group>(body);
-    // if (!DbUtil.CheckGroupExists(group.name))
-    // {
-    //     return Results.BadRequest("Group not found");
-    // }
-
-    if (user.Groups == null)
+    var schedule = JsonConvert.DeserializeObject<Schedule>(body);
+    if (!DbUtil.CheckExists(schedule))
     {
-        user.Groups = new List<string>();
+         return Results.BadRequest("This group, or teacher or auditory not found");
     }
 
-    user.Groups.Add(body);
+    if (user.Schedules == null)
+    {
+        user.Schedules = new List<string>();
+    }
+
+    user.Schedules.Add(body);
 
     await userManager.UpdateAsync(user);
     return Results.Ok("Schedule added");
@@ -300,18 +303,27 @@ app.MapPost("/user/remove", [Authorize] async (HttpContext x, UserManager<AuthUs
     }
     using var reader = new StreamReader(x.Request.Body);
     var body = await reader.ReadToEndAsync();
-    var group = JsonConvert.DeserializeObject<Group>(body);
-    // if (!DbUtil.CheckGroupExists(group.name))
-    // {
-    //     return Results.BadRequest("Group not found");
-    // }
-
-    if (user.Groups == null)
+    var schedule = JsonConvert.DeserializeObject<Schedule>(body);
+    if (!DbUtil.CheckExists(schedule))
     {
-        user.Groups = new List<string>();
+        return Results.BadRequest("This group, or teacher or auditory not found");
     }
 
-    user.Groups.Remove(body);
+    if (user.Schedules == null)
+    {
+        user.Schedules = new List<string>();
+    }
+
+    // delete schedule from user
+
+    try
+    {
+        user.Schedules.Remove(body);
+    }
+    catch (Exception e)
+    {
+        return Results.NotFound("Schedule not found");
+    }
 
     await userManager.UpdateAsync(user);
     return Results.Ok("Schedule removed");
@@ -323,6 +335,7 @@ app.MapPost("/user/remove", [Authorize] async (HttpContext x, UserManager<AuthUs
     "   -d '{" + "\n" +
     "       \"id\": \"id\"," + "\n" +
     "       \"name\": \"name" + "\n" +
+    "       \"type\": \"type" + "\n" +
     "   }'```";
     genOp.Summary = "Remove schedule from user";
     return genOp;
@@ -340,7 +353,7 @@ app.MapPost("/user/destroy", [Authorize] async (HttpContext x, UserManager<AuthU
     return Results.Ok("User deleted");
 }).WithOpenApi(genOp =>
 {
-    genOp.Description = "Delete user, requires authorization with Bearer token. Example: ```curl -X POST -H \"Content - Type: application/json\" -H \"Authorization: Bearer your_token\" http://api.mindenit.tech/user/destroy```";
+    genOp.Description = "Delete user, requires authorization with Bearer token. Example: <code>curl -X POST -H \"Content - Type: application/json\" -H \"Authorization: Bearer your_token\" http://api.mindenit.tech/user/destroy<code>";
     genOp.Summary = "Delete user";
     return genOp;
 });
@@ -353,9 +366,12 @@ app.UseSwagger(options =>
     options.SerializeAsV2 = true;
 });
 
-app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Mindenit API"));
-
-app.UseSwaggerUI();
+// change swagger endpoint to /
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Mindenit API");
+    c.RoutePrefix = "";
+});
 
 app.MapIdentityApi<AuthUser>();
 app.UseAuthorization();

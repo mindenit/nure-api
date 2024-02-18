@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using nure_api.Models;
 using NureCistBot.JsonParsers;
+using Serilog;
 
 namespace nure_api.Handlers;
 
@@ -158,11 +159,16 @@ public class ScheduleHandler
             auditories = context.Auditories.ToList();
             teachers = context.Teachers.ToList();
 
-            Parallel.ForEach(teachers, new ParallelOptions { MaxDegreeOfParallelism = 12 }, teacher =>
+            Log.Information("Init started.");
+            
+            Parallel.ForEach(teachers, new ParallelOptions { MaxDegreeOfParallelism = 8 }, teacher =>
             {
+                
                 var timeFromUpdate = (DateTime.UtcNow - teacher.lastUpdated).TotalHours;
 
-                Console.WriteLine($"{teacher.shortName} - {timeFromUpdate}");
+                Log.Information($"\nName: {teacher.shortName}" +
+                                                $"\nId: {teacher.id}" +
+                                                $"\nTime from last update: {timeFromUpdate}");
 
                 if (teacher.Schedule == "" || timeFromUpdate > 3)
                 {
@@ -185,7 +191,9 @@ public class ScheduleHandler
             {
                 var timeFromUpdate = (DateTime.UtcNow - auditory.lastUpdated).TotalHours;
 
-                Console.WriteLine($"{auditory.name} - {timeFromUpdate}");
+                Log.Information($"\nName: {auditory.name}" +
+                                $"\nId: {auditory.id}" +
+                                $"\nTime from last update: {timeFromUpdate}");
 
                 if (auditory.Schedule == "" || timeFromUpdate > 3)
                 {
@@ -209,7 +217,9 @@ public class ScheduleHandler
             {
                 var timeFromUpdate = (DateTime.UtcNow - group.lastUpdated).TotalHours;
 
-                Console.WriteLine($"{group.name} - {timeFromUpdate}");
+                Log.Information($"\nName: {group.name}" +
+                                $"\nId: {group.id}" +
+                                $"\nTime from last update: {timeFromUpdate}");
 
                 if (group.Schedule == "" || timeFromUpdate > 3)
                 {
