@@ -20,7 +20,9 @@ builder.Services.AddCors(options =>
     options.AddPolicy(name: allowCORS,
         policy =>
         {
-            policy.WithOrigins("*");
+            policy.AllowAnyOrigin()
+                .AllowAnyHeader()
+                .AllowAnyMethod();
         });
 });
 builder.Host.UseSerilog();
