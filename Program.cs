@@ -93,7 +93,7 @@ using (var context = new Context())
     }
 }
 
-//ScheduleHandler.Init();
+ScheduleHandler.Init();
 Log.Information("Schedule init complete");
 
 /// <summary>
