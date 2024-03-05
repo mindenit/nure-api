@@ -298,7 +298,7 @@ app.MapPost("/user/add", [Authorize] async (HttpContext x, UserManager<AuthUser>
 ///     }'
 ///
 /// </remarks>
-app.MapPost("/user/remove", [Authorize] async (HttpContext x, UserManager<AuthUser> userManager) =>
+app.MapDelete("/user/remove", [Authorize] async (HttpContext x, UserManager<AuthUser> userManager) =>
 {
     var user = await userManager.GetUserAsync(x.User);
     if (user == null)
@@ -346,7 +346,7 @@ app.MapPost("/user/remove", [Authorize] async (HttpContext x, UserManager<AuthUs
 })
 .Produces<string>();
 
-app.MapPost("/user/destroy", [Authorize] async (HttpContext x, UserManager<AuthUser> userManager) =>
+app.MapDelete("/user/destroy", [Authorize] async (HttpContext x, UserManager<AuthUser> userManager) =>
 {
     var user = await userManager.GetUserAsync(x.User);
     if (user == null)
