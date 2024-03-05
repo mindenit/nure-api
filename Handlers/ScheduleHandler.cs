@@ -175,7 +175,7 @@ public class ScheduleHandler
                 {
                     var ping = new Ping();
                     var source = new Uri("https://cist.nure.ua/");
-                    var isAlive = ping.Send(source.Host, 500);
+                    var isAlive = ping.Send(source.Host, 150);
 
                     if (isAlive.Status == IPStatus.Success)
                     {
@@ -214,7 +214,7 @@ public class ScheduleHandler
                 {
                     var ping = new Ping();
                     var source = new Uri("https://cist.nure.ua/");
-                    var isAlive = ping.Send(source.Host, 500);
+                    var isAlive = ping.Send(source.Host, 150);
 
                     if (isAlive.Status == IPStatus.Success)
                     {
@@ -253,7 +253,7 @@ public class ScheduleHandler
                 {
                     var ping = new Ping();
                     var source = new Uri("https://cist.nure.ua/");
-                    var isAlive = ping.Send(source.Host, 500);
+                    var isAlive = ping.Send(source.Host, 150);
 
                     if (isAlive.Status == IPStatus.Success)
                     {
