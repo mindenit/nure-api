@@ -192,6 +192,11 @@ public class ScheduleHandler
                             teacher.lastUpdated = DateTime.UtcNow;
                         }
                     }
+                    else
+                    {
+                        teacher.Schedule = "[]";
+                        teacher.lastUpdated = DateTime.UtcNow;
+                    }
                 }
 
                 context.SaveChanges();
@@ -226,6 +231,11 @@ public class ScheduleHandler
                             auditory.lastUpdated = DateTime.UtcNow;
                         }
                     }
+                    else
+                    {
+                        auditory.Schedule = "[]";
+                        auditory.lastUpdated = DateTime.UtcNow;
+                    }
                 }
                 context.SaveChanges();
             }
@@ -259,6 +269,11 @@ public class ScheduleHandler
                             group.Schedule = "[]";
                             group.lastUpdated = DateTime.UtcNow;
                         }
+                    }
+                    else
+                    {
+                        group.Schedule = "[]";
+                        group.lastUpdated = DateTime.UtcNow;
                     }
                 }
                 context.SaveChanges();
@@ -325,22 +340,29 @@ public class ScheduleHandler
 
                     if (timeFromUpdate > 30)
                     {
-                        try
+                        var ping = new Ping();
+                        var source = new Uri("https://cist.nure.ua/");
+                        var isAlive = ping.Send(source.Host, 500);
+
+                        if (isAlive.Status == IPStatus.Success)
                         {
-                            var json = JsonFixers.TryFix(Download(group.id, 1));
-                            var parsed = Parse(json);
-                            group.Schedule = JsonConvert.SerializeObject(parsed);
-                            group.lastUpdated = DateTime.UtcNow;
-                            Log.Information($"Updated: {group.name} - {timeFromUpdate}");
-                            context.SaveChanges();
-                        }
-                        catch (Exception e)
-                        {
-                            Console.WriteLine(e);
-                            group.Schedule = "[]";
-                            group.lastUpdated = DateTime.UtcNow;
-                            Log.Information($"Updated: {group.name} - {timeFromUpdate}");
-                            context.SaveChanges();
+                            try
+                            {
+                                var json = JsonFixers.TryFix(Download(group.id, 1));
+                                var parsed = Parse(json);
+                                group.Schedule = JsonConvert.SerializeObject(parsed);
+                                group.lastUpdated = DateTime.UtcNow;
+                                Log.Information($"Updated: {group.name} - {timeFromUpdate}");
+                                context.SaveChanges();
+                            }
+                            catch (Exception e)
+                            {
+                                Console.WriteLine(e);
+                                group.Schedule = "[]";
+                                group.lastUpdated = DateTime.UtcNow;
+                                Log.Information($"Updated: {group.name} - {timeFromUpdate}");
+                                context.SaveChanges();
+                            }
                         }
                     }
 
@@ -361,21 +383,28 @@ public class ScheduleHandler
 
                     if (timeFromUpdate > 30)
                     {
-                        try
+                        var ping = new Ping();
+                        var source = new Uri("https://cist.nure.ua/");
+                        var isAlive = ping.Send(source.Host, 500);
+
+                        if (isAlive.Status == IPStatus.Success)
                         {
-                            var json = JsonFixers.TryFix(Download(teacher.id, 2));
-                            var parsed = Parse(json);
-                            teacher.Schedule = JsonConvert.SerializeObject(parsed);
-                            teacher.lastUpdated = DateTime.UtcNow;
-                            Log.Information($"Updated: {teacher.shortName} - {timeFromUpdate}");
-                            context.SaveChanges();
-                        }
-                        catch (Exception e)
-                        {
-                            teacher.Schedule = "[]";
-                            teacher.lastUpdated = DateTime.UtcNow;
-                            Log.Information($"Updated: {teacher.shortName} - {timeFromUpdate}");
-                            context.SaveChanges();
+                            try
+                            {
+                                var json = JsonFixers.TryFix(Download(teacher.id, 2));
+                                var parsed = Parse(json);
+                                teacher.Schedule = JsonConvert.SerializeObject(parsed);
+                                teacher.lastUpdated = DateTime.UtcNow;
+                                Log.Information($"Updated: {teacher.shortName} - {timeFromUpdate}");
+                                context.SaveChanges();
+                            }
+                            catch (Exception e)
+                            {
+                                teacher.Schedule = "[]";
+                                teacher.lastUpdated = DateTime.UtcNow;
+                                Log.Information($"Updated: {teacher.shortName} - {timeFromUpdate}");
+                                context.SaveChanges();
+                            }
                         }
                     }
 
@@ -396,21 +425,28 @@ public class ScheduleHandler
 
                     if (timeFromUpdate > 30)
                     {
-                        try
+                        var ping = new Ping();
+                        var source = new Uri("https://cist.nure.ua/");
+                        var isAlive = ping.Send(source.Host, 500);
+
+                        if (isAlive.Status == IPStatus.Success)
                         {
-                            var json = JsonFixers.TryFix(Download(auditory.id, 3));
-                            var parsed = Parse(json);
-                            auditory.Schedule = JsonConvert.SerializeObject(parsed);
-                            auditory.lastUpdated = DateTime.UtcNow;
-                            Log.Information($"Updated: {auditory.name} - {timeFromUpdate}");
-                            context.SaveChanges();
-                        }
-                        catch (Exception e)
-                        {
-                            auditory.Schedule = "[]";
-                            auditory.lastUpdated = DateTime.UtcNow;
-                            Log.Information($"Updated: {auditory.name} - {timeFromUpdate}");
-                            context.SaveChanges();
+                            try
+                            {
+                                var json = JsonFixers.TryFix(Download(auditory.id, 3));
+                                var parsed = Parse(json);
+                                auditory.Schedule = JsonConvert.SerializeObject(parsed);
+                                auditory.lastUpdated = DateTime.UtcNow;
+                                Log.Information($"Updated: {auditory.name} - {timeFromUpdate}");
+                                context.SaveChanges();
+                            }
+                            catch (Exception e)
+                            {
+                                auditory.Schedule = "[]";
+                                auditory.lastUpdated = DateTime.UtcNow;
+                                Log.Information($"Updated: {auditory.name} - {timeFromUpdate}");
+                                context.SaveChanges();
+                            }
                         }
                     }
 

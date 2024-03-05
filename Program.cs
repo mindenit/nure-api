@@ -64,7 +64,9 @@ builder.Services.AddDbContext<Context>(options =>
 builder.Services.AddAuthorization();
 
 builder.Services.AddIdentityApiEndpoints<AuthUser>()
+    .AddErrorDescriber<IdentityErrors>()
     .AddEntityFrameworkStores<Context>();
+
 builder.Services.AddScoped<UserManager<AuthUser>>();
 
 builder.Services.AddSingleton<IEmailSender<AuthUser>, DummyEmailSender>();
