@@ -222,11 +222,11 @@ app.MapGet("/user", [Authorize] async (HttpContext x, UserManager<AuthUser> user
         return Results.NotFound("User not found");
     }
     
-    var schedules = JsonConvert.DeserializeObject<List<Schedule>>(JsonConvert.SerializeObject(user.Schedules));
+    //var schedules = JsonConvert.DeserializeObject<List<Schedule>>(JsonConvert.SerializeObject(user.Schedules));
     
     UserInfo userInfo = new UserInfo()
     {
-        schedules = schedules.ToArray(),
+        schedules = user.Schedules.ToArray(),
         id = user.Id,
         email = user.Email,
         userName = user.UserName,
