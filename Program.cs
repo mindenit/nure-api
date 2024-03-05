@@ -221,7 +221,19 @@ app.MapGet("/user", [Authorize] async (HttpContext x, UserManager<AuthUser> user
     {
         return Results.NotFound("User not found");
     }
-    var json = JsonConvert.SerializeObject(user, Formatting.Indented);
+    
+    var schedules = JsonConvert.DeserializeObject<List<Schedule>>(JsonConvert.SerializeObject(user.Schedules));
+    
+    UserInfo userInfo = new UserInfo()
+    {
+        schedules = schedules.ToArray(),
+        id = user.Id,
+        email = user.Email,
+        userName = user.UserName,
+        accessFailedCount = user.AccessFailedCount
+    };
+    
+    var json = JsonConvert.SerializeObject(userInfo, Formatting.Indented);
     return Results.Content(json, "application/json");
 }).WithOpenApi(genOp =>
 {
@@ -229,7 +241,7 @@ app.MapGet("/user", [Authorize] async (HttpContext x, UserManager<AuthUser> user
     genOp.Summary = "Get user info";
     return genOp;
 })
-.Produces<AuthUser>();
+.Produces<UserInfo>();
 
 /// <summary>
 /// Add group to user, requires authorization with Bearer token
