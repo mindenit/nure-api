@@ -91,11 +91,11 @@ using (var context = new Context())
     if (!context.Auditories.Any())
     {
         AuditoriesHandler.Init();
-        Console.WriteLine("Auditories init complete");
+        Log.Information("Auditories init complete");
     }
 }
 
-ScheduleHandler.Init();
+//ScheduleHandler.Init();
 Log.Information("Schedule init complete");
 
 /// <summary>

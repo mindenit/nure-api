@@ -78,15 +78,16 @@ public class ScheduleHandler
         return null; // якщо клас з таким ідентифікатором не знайдено
     }
 
-    private static Teacher? findTeacherById(JToken teachers, int id)
+    private static Teacher? findTeacherById(JToken teachers, int? id)
     {
         foreach (var teacher in teachers)
         {
-            if (teacher["id"].Value<int>() == id)
+            if (teacher["id"].Value<int>() == id && teacher["id"].Value<long?>() is not null
+                && teacher["short_name"] is not null && teacher["full_name"] is not null)
             {
                 return new Teacher()
                 {
-                    id = teacher["id"].Value<int>(),
+                    id = teacher["id"].Value<long>(),
                     shortName = teacher["short_name"].Value<string>(),
                     fullName = teacher["full_name"].Value<string>()
                 };
@@ -120,8 +121,8 @@ public class ScheduleHandler
             var webRequest = WebRequest.Create($"https://cist.nure.ua/ias/app/tt/P_API_EVEN_JSON?" +
                                                $"type_id={Type}" +
                                                $"&timetable_id={Id}" +
-                                               $"&time_from=1693515600" +
-                                               $"&time_to=1725138000" +
+                                               $"&time_from=1603515600" +
+                                               $"&time_to=1800138000" +
                                                "&idClient=KNURESked") as HttpWebRequest;
 
             webRequest.ContentType = "application/json";
@@ -305,15 +306,21 @@ public class ScheduleHandler
             }
             else
             {
+                pair.teachers = new List<Teacher>();
                 Parallel.ForEach(lesson["teachers"],
-                    teacher => { pair.teachers.Add(findTeacherById(events["teachers"], teacher.Value<int>())); });
+                    teacher =>
+                    {
+                        pair.teachers.Add(findTeacherById(events["teachers"], teacher.Value<int>()));
+                    });
             }
 
             if (lesson["groups"].Children().Count() == 0)
             {
+                pair.groups = new List<Group>();
             }
             else
             {
+                pair.groups = new List<Group>();
                 Parallel.ForEach(lesson["groups"], group =>
                 {
                     var findedGroup = findGroupById(events["groups"], group.Value<int>());
@@ -342,7 +349,7 @@ public class ScheduleHandler
                     {
                         var ping = new Ping();
                         var source = new Uri("https://cist.nure.ua/");
-                        var isAlive = ping.Send(source.Host, 500);
+                        var isAlive = ping.Send(source.Host, 150);
 
                         if (isAlive.Status == IPStatus.Success)
                         {
@@ -357,7 +364,7 @@ public class ScheduleHandler
                             }
                             catch (Exception e)
                             {
-                                Console.WriteLine(e);
+                                Log.Information($"{e}");
                                 group.Schedule = "[]";
                                 group.lastUpdated = DateTime.UtcNow;
                                 Log.Information($"Updated: {group.name} - {timeFromUpdate}");
@@ -385,7 +392,7 @@ public class ScheduleHandler
                     {
                         var ping = new Ping();
                         var source = new Uri("https://cist.nure.ua/");
-                        var isAlive = ping.Send(source.Host, 500);
+                        var isAlive = ping.Send(source.Host, 150);
 
                         if (isAlive.Status == IPStatus.Success)
                         {
@@ -427,7 +434,7 @@ public class ScheduleHandler
                     {
                         var ping = new Ping();
                         var source = new Uri("https://cist.nure.ua/");
-                        var isAlive = ping.Send(source.Host, 500);
+                        var isAlive = ping.Send(source.Host, 150);
 
                         if (isAlive.Status == IPStatus.Success)
                         {
