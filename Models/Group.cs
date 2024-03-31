@@ -4,8 +4,8 @@ namespace nure_api.Models;
 
 public class Group
 {
-    public int Id { get; set; }
-    public string Name { get; set; }
+    public int id { get; set; }
+    public string name { get; set; }
 
     [JsonIgnore] public string? Schedule { get; set; }
 
@@ -31,7 +31,7 @@ public class Group
                             {
                                 foreach (var group in direction.groups)
                                 {
-                                    groups.Add(new Group(){ Id = group.id, Name = group.name, Schedule = ""});
+                                    groups.Add(new Group(){ id = group.id, name = group.name, Schedule = ""});
                                 }
                             }
                             if (direction.specialities is not null)
@@ -42,7 +42,7 @@ public class Group
                                     {
                                         foreach (var group in specialition.groups)
                                         {
-                                            groups.Add(new Group(){ Id = group.id, Name = group.name, Schedule = ""});
+                                            groups.Add(new Group(){ id = group.id, name = group.name, Schedule = ""});
                                         }
                                     }
                                 }

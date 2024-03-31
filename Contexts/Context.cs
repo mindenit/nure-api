@@ -1,9 +1,10 @@
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using nure_api.Models;
 
 namespace nure_api;
 
-public class Context : DbContext
+public class Context : IdentityDbContext<AuthUser>
 {
     public DbSet<Group> Groups { get; set; }
     public DbSet<Teacher> Teachers { get; set; }
@@ -14,4 +15,6 @@ public class Context : DbContext
         optionsBuilder.UseNpgsql(
             File.ReadAllText("dbConnection"));
     }
+    
+    public Context(DbContextOptions<Context> options) : base(options) { }
 }

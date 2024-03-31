@@ -5,6 +5,9 @@ project.lock.json
 *.pyc
 nupkg/
 
+/Migrations
+/Properties
+
 /dbConnection
 
 # Visual Studio Code
@@ -43,3 +46,5 @@ bld/
 msbuild.log
 msbuild.err
 msbuild.wrn
+.config/dotnet-tools.json
+/Properties/

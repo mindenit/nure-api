@@ -1,9 +1,11 @@
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using nure_api.Models;
 using NureCistBot.JsonParsers;
+using Serilog;
 
 namespace nure_api.Handlers;
 
@@ -49,7 +51,7 @@ public class ScheduleHandler
 
         foreach (var auditory in auditories)
         {
-            if (auditory.Name.ToUpper() == Name.ToUpper())
+            if (auditory.name.ToUpper() == Name.ToUpper())
             {
                 return auditory;
             }
@@ -66,9 +68,9 @@ public class ScheduleHandler
             {
                 return new Subject()
                 {
-                    Id = subject["id"].Value<int>(),
-                    Brief = subject["brief"].Value<string>(),
-                    Title = subject["title"].Value<string>()
+                    id = subject["id"].Value<int>(),
+                    brief = subject["brief"].Value<string>(),
+                    title = subject["title"].Value<string>()
                 };
             }
         }
@@ -76,17 +78,18 @@ public class ScheduleHandler
         return null; // якщо клас з таким ідентифікатором не знайдено
     }
 
-    private static Teacher? findTeacherById(JToken teachers, int id)
+    private static Teacher? findTeacherById(JToken teachers, int? id)
     {
         foreach (var teacher in teachers)
         {
-            if (teacher["id"].Value<int>() == id)
+            if (teacher["id"].Value<int>() == id && teacher["id"].Value<long?>() is not null
+                && teacher["short_name"] is not null && teacher["full_name"] is not null)
             {
                 return new Teacher()
                 {
-                    Id = teacher["id"].Value<int>(),
-                    ShortName = teacher["short_name"].Value<string>(),
-                    FullName = teacher["full_name"].Value<string>()
+                    id = teacher["id"].Value<long>(),
+                    shortName = teacher["short_name"].Value<string>(),
+                    fullName = teacher["full_name"].Value<string>()
                 };
             }
         }
@@ -102,8 +105,8 @@ public class ScheduleHandler
             {
                 return new Group()
                 {
-                    Id = group["id"].Value<int>(),
-                    Name = group["name"].Value<string>()
+                    id = group["id"].Value<int>(),
+                    name = group["name"].Value<string>()
                 };
             }
         }
@@ -118,6 +121,8 @@ public class ScheduleHandler
             var webRequest = WebRequest.Create($"https://cist.nure.ua/ias/app/tt/P_API_EVEN_JSON?" +
                                                $"type_id={Type}" +
                                                $"&timetable_id={Id}" +
+                                               $"&time_from=1603515600" +
+                                               $"&time_to=1800138000" +
                                                "&idClient=KNURESked") as HttpWebRequest;
 
             webRequest.ContentType = "application/json";
@@ -150,88 +155,131 @@ public class ScheduleHandler
         List<Auditory> auditories = new List<Auditory>();
         List<Teacher> teachers = new List<Teacher>();
 
+
         using (var context = new Context())
         {
             groups = context.Groups.ToList();
             auditories = context.Auditories.ToList();
             teachers = context.Teachers.ToList();
+        }
 
-            foreach (var group in groups)
+        Log.Information("Init started.");
+
+        Parallel.ForEach(teachers, new ParallelOptions { MaxDegreeOfParallelism = 10 }, teacher =>
+        {
+            using (var context = new Context())
             {
-                var timeFromUpdate = (DateTime.UtcNow - group.lastUpdated).TotalHours;
+                Log.Information($"\nName: {teacher.shortName}" +
+                                $"\nId: {teacher.id}");
 
-                Console.WriteLine($"{group.Name} - {timeFromUpdate}");
-
-                if (group.Schedule == "" || timeFromUpdate > 3)
+                if (teacher.Schedule == "")
                 {
-                    try
+                    var ping = new Ping();
+                    var source = new Uri("https://cist.nure.ua/");
+                    var isAlive = ping.Send(source.Host, 150);
+
+                    if (isAlive.Status == IPStatus.Success)
                     {
-                        var json = JsonFixers.TryFix(Download(group.Id, 1));
-                        var parsed = Parse(json);
-                        group.Schedule = JsonConvert.SerializeObject(parsed);
-                        group.lastUpdated = DateTime.UtcNow;
-                        context.SaveChangesAsync();
+                        try
+                        {
+                            var json = JsonFixers.TryFix(Download(teacher.id, 2));
+                            var parsed = Parse(json);
+                            teacher.Schedule = JsonConvert.SerializeObject(parsed);
+                            teacher.lastUpdated = DateTime.UtcNow;
+                        }
+                        catch (Exception e)
+                        {
+                            teacher.Schedule = "[]";
+                            teacher.lastUpdated = DateTime.UtcNow;
+                        }
                     }
-                    catch (Exception e)
-                    {
-                        group.Schedule = "[]";
-                        group.lastUpdated = DateTime.UtcNow;
-                        context.SaveChangesAsync();
-                    }
-                }
-            }
-
-
-            foreach (var teacher in teachers)
-            {
-                var timeFromUpdate = (DateTime.UtcNow - teacher.lastUpdated).TotalHours;
-
-                Console.WriteLine($"{teacher.ShortName} - {timeFromUpdate}");
-
-                if (teacher.Schedule == "" || timeFromUpdate > 3)
-                {
-                    try
-                    {
-                        var json = JsonFixers.TryFix(Download(teacher.Id, 2));
-                        var parsed = Parse(json);
-                        teacher.Schedule = JsonConvert.SerializeObject(parsed);
-                        teacher.lastUpdated = DateTime.UtcNow;
-                        context.SaveChanges();
-                    }
-                    catch (Exception e)
+                    else
                     {
                         teacher.Schedule = "[]";
                         teacher.lastUpdated = DateTime.UtcNow;
-                        context.SaveChanges();
                     }
                 }
+
+                context.SaveChanges();
             }
+        });
 
-            foreach (var auditory in auditories)
+        Parallel.ForEach(auditories, new ParallelOptions { MaxDegreeOfParallelism = 10 }, auditory =>
+        {
+            using (var context = new Context())
             {
-                var timeFromUpdate = (DateTime.UtcNow - auditory.lastUpdated).TotalHours;
+                Log.Information($"\nName: {auditory.name}" +
+                                $"\nId: {auditory.id}");
 
-                Console.WriteLine($"{auditory.Name} - {timeFromUpdate}");
-
-                if (auditory.Schedule == "" || timeFromUpdate > 3)
+                if (auditory.Schedule == "")
                 {
-                    try
+                    var ping = new Ping();
+                    var source = new Uri("https://cist.nure.ua/");
+                    var isAlive = ping.Send(source.Host, 150);
+
+                    if (isAlive.Status == IPStatus.Success)
                     {
-                        var json = JsonFixers.TryFix(Download(auditory.Id, 2));
-                        var parsed = Parse(json);
-                        auditory.Schedule = JsonConvert.SerializeObject(parsed);
-                        auditory.lastUpdated = DateTime.UtcNow;
-                        context.SaveChanges();
+                        try
+                        {
+                            var json = JsonFixers.TryFix(Download(auditory.id, 2));
+                            var parsed = Parse(json);
+                            auditory.Schedule = JsonConvert.SerializeObject(parsed);
+                            auditory.lastUpdated = DateTime.UtcNow;
+                        }
+                        catch (Exception e)
+                        {
+                            auditory.Schedule = "[]";
+                            auditory.lastUpdated = DateTime.UtcNow;
+                        }
                     }
-                    catch (Exception e)
+                    else
                     {
                         auditory.Schedule = "[]";
                         auditory.lastUpdated = DateTime.UtcNow;
-                        context.SaveChanges();
                     }
                 }
+                context.SaveChanges();
             }
-        }
+        });
+
+
+        Parallel.ForEach(groups, new ParallelOptions { MaxDegreeOfParallelism = 10 }, group =>
+        {
+            using (var context = new Context())
+            {
+                Log.Information($"\nName: {group.name}" +
+                                $"\nId: {group.id}");
+
+                if (group.Schedule == "")
+                {
+                    var ping = new Ping();
+                    var source = new Uri("https://cist.nure.ua/");
+                    var isAlive = ping.Send(source.Host, 150);
+
+                    if (isAlive.Status == IPStatus.Success)
+                    {
+                        try
+                        {
+                            var json = JsonFixers.TryFix(Download(group.id, 1));
+                            var parsed = Parse(json);
+                            group.Schedule = JsonConvert.SerializeObject(parsed);
+                            group.lastUpdated = DateTime.UtcNow;
+                        }
+                        catch (Exception e)
+                        {
+                            group.Schedule = "[]";
+                            group.lastUpdated = DateTime.UtcNow;
+                        }
+                    }
+                    else
+                    {
+                        group.Schedule = "[]";
+                        group.lastUpdated = DateTime.UtcNow;
+                    }
+                }
+                context.SaveChanges();
+            }
+        });
     }
 
     private static List<Event> Parse(string json)
@@ -243,43 +291,47 @@ public class ScheduleHandler
         Parallel.ForEach(events["events"], lesson =>
         {
             Event pair = new Event();
-            pair.NumberPair = lesson["number_pair"].Value<int>();
-            pair.StartTime = lesson["start_time"].Value<long>();
-            pair.EndTime = lesson["end_time"].Value<long>();
-            pair.Type = getType(lesson["type"].Value<int>());
+            pair.numberPair = lesson["number_pair"].Value<int>();
+            pair.startTime = lesson["start_time"].Value<long>();
+            pair.endTime = lesson["end_time"].Value<long>();
+            pair.type = getType(lesson["type"].Value<int>());
 
-            pair.Auditory = lesson["auditory"].Value<string>();
+            pair.auditory = lesson["auditory"].Value<string>();
 
-            pair.Subject = findSubjectById(events["subjects"], lesson["subject_id"].Value<int>());
+            pair.subject = findSubjectById(events["subjects"], lesson["subject_id"].Value<int>());
 
             if (lesson["teachers"].Children().Count() == 0)
             {
-                pair.Teachers = new List<Teacher>();
+                pair.teachers = new List<Teacher>();
             }
             else
             {
-                Parallel.ForEach(lesson["teachers"], teacher =>
-                {
-                    pair.Teachers.Add(findTeacherById(events["teachers"], teacher.Value<int>()));
-                });
+                pair.teachers = new List<Teacher>();
+                Parallel.ForEach(lesson["teachers"],
+                    teacher =>
+                    {
+                        pair.teachers.Add(findTeacherById(events["teachers"], teacher.Value<int>()));
+                    });
             }
 
             if (lesson["groups"].Children().Count() == 0)
             {
+                pair.groups = new List<Group>();
             }
             else
             {
+                pair.groups = new List<Group>();
                 Parallel.ForEach(lesson["groups"], group =>
                 {
                     var findedGroup = findGroupById(events["groups"], group.Value<int>());
-                    pair.Groups.Add(findedGroup);
+                    pair.groups.Add(findedGroup);
                 });
             }
 
             pairs.Add(pair);
         });
-        
-        return pairs.OrderBy(x => x.StartTime).ToList();
+
+        return pairs.OrderBy(x => x.startTime).ToList();
     }
 
     public static List<Event> GetEvents(long Id, string Type, long StartTime, long EndTime)
@@ -289,32 +341,42 @@ public class ScheduleHandler
             case "group":
                 using (var context = new Context())
                 {
-                    Group group = context.Groups.ToList().Find(x => x.Id == Id);
-                    
+                    Group group = context.Groups.ToList().Find(x => x.id == Id);
+
                     var timeFromUpdate = (DateTime.UtcNow - group.lastUpdated).TotalHours;
 
-                    if (group.Schedule == "" || timeFromUpdate > 5)
+                    if (timeFromUpdate > 30)
                     {
-                        try
+                        var ping = new Ping();
+                        var source = new Uri("https://cist.nure.ua/");
+                        var isAlive = ping.Send(source.Host, 150);
+
+                        if (isAlive.Status == IPStatus.Success)
                         {
-                            var json = JsonFixers.TryFix(Download(group.Id, 1));
-                            var parsed = Parse(json);
-                            group.Schedule = JsonConvert.SerializeObject(parsed);
-                            group.lastUpdated = DateTime.UtcNow;
-                            context.SaveChangesAsync();
-                        }
-                        catch (Exception e)
-                        {
-                            group.Schedule = "[]";
-                            group.lastUpdated = DateTime.UtcNow;
-                            context.SaveChangesAsync();
+                            try
+                            {
+                                var json = JsonFixers.TryFix(Download(group.id, 1));
+                                var parsed = Parse(json);
+                                group.Schedule = JsonConvert.SerializeObject(parsed);
+                                group.lastUpdated = DateTime.UtcNow;
+                                Log.Information($"Updated: {group.name} - {timeFromUpdate}");
+                                context.SaveChanges();
+                            }
+                            catch (Exception e)
+                            {
+                                Log.Information($"{e}");
+                                group.Schedule = "[]";
+                                group.lastUpdated = DateTime.UtcNow;
+                                Log.Information($"Updated: {group.name} - {timeFromUpdate}");
+                                context.SaveChanges();
+                            }
                         }
                     }
 
                     List<Event> schedule = JsonConvert.DeserializeObject<List<Event>>(group.Schedule);
-                    
-                    return schedule.Where(e => e.StartTime >= StartTime && e.StartTime <= EndTime)
-                        .OrderBy(x => x.StartTime)
+
+                    return schedule.Where(e => e.startTime >= StartTime && e.startTime <= EndTime)
+                        .OrderBy(x => x.startTime)
                         .ToList();
                 }
 
@@ -322,32 +384,41 @@ public class ScheduleHandler
             case "teacher":
                 using (var context = new Context())
                 {
-                    var teacher = context.Teachers.ToList().Find(x => x.Id == Id);
-                    
+                    var teacher = context.Teachers.ToList().Find(x => x.id == Id);
+
                     var timeFromUpdate = (DateTime.UtcNow - teacher.lastUpdated).TotalHours;
 
-                    if (teacher.Schedule == "" || timeFromUpdate > 5)
+                    if (timeFromUpdate > 30)
                     {
-                        try
+                        var ping = new Ping();
+                        var source = new Uri("https://cist.nure.ua/");
+                        var isAlive = ping.Send(source.Host, 150);
+
+                        if (isAlive.Status == IPStatus.Success)
                         {
-                            var json = JsonFixers.TryFix(Download(teacher.Id, 2));
-                            var parsed = Parse(json);
-                            teacher.Schedule = JsonConvert.SerializeObject(parsed);
-                            teacher.lastUpdated = DateTime.UtcNow;
-                            context.SaveChangesAsync();
-                        }
-                        catch (Exception e)
-                        {
-                            teacher.Schedule = "[]";
-                            teacher.lastUpdated = DateTime.UtcNow;
-                            context.SaveChangesAsync();
+                            try
+                            {
+                                var json = JsonFixers.TryFix(Download(teacher.id, 2));
+                                var parsed = Parse(json);
+                                teacher.Schedule = JsonConvert.SerializeObject(parsed);
+                                teacher.lastUpdated = DateTime.UtcNow;
+                                Log.Information($"Updated: {teacher.shortName} - {timeFromUpdate}");
+                                context.SaveChanges();
+                            }
+                            catch (Exception e)
+                            {
+                                teacher.Schedule = "[]";
+                                teacher.lastUpdated = DateTime.UtcNow;
+                                Log.Information($"Updated: {teacher.shortName} - {timeFromUpdate}");
+                                context.SaveChanges();
+                            }
                         }
                     }
 
                     var schedule = JsonConvert.DeserializeObject<List<Event>>(teacher.Schedule);
 
-                    return schedule.Where(e => e.StartTime >= StartTime && e.StartTime <= EndTime)
-                        .OrderBy(x => x.StartTime)
+                    return schedule.Where(e => e.startTime >= StartTime && e.startTime <= EndTime)
+                        .OrderBy(x => x.startTime)
                         .ToList();
                 }
 
@@ -355,34 +426,41 @@ public class ScheduleHandler
             case "auditory":
                 using (var context = new Context())
                 {
-                    var auditory = context.Auditories.ToList().Find(x => x.Id == Id);
+                    var auditory = context.Auditories.ToList().Find(x => x.id == Id);
 
                     var timeFromUpdate = (DateTime.UtcNow - auditory.lastUpdated).TotalHours;
 
-                    Console.WriteLine($"{auditory.Name} - {timeFromUpdate}");
-
-                    if (auditory.Schedule == "" || timeFromUpdate > 5)
+                    if (timeFromUpdate > 30)
                     {
-                        try
+                        var ping = new Ping();
+                        var source = new Uri("https://cist.nure.ua/");
+                        var isAlive = ping.Send(source.Host, 150);
+
+                        if (isAlive.Status == IPStatus.Success)
                         {
-                            var json = JsonFixers.TryFix(Download(auditory.Id, 3));
-                            var parsed = Parse(json);
-                            auditory.Schedule = JsonConvert.SerializeObject(parsed);
-                            auditory.lastUpdated = DateTime.UtcNow;
-                            context.SaveChangesAsync();
-                        }
-                        catch (Exception e)
-                        {
-                            auditory.Schedule = "[]";
-                            auditory.lastUpdated = DateTime.UtcNow;
-                            context.SaveChangesAsync();
+                            try
+                            {
+                                var json = JsonFixers.TryFix(Download(auditory.id, 3));
+                                var parsed = Parse(json);
+                                auditory.Schedule = JsonConvert.SerializeObject(parsed);
+                                auditory.lastUpdated = DateTime.UtcNow;
+                                Log.Information($"Updated: {auditory.name} - {timeFromUpdate}");
+                                context.SaveChanges();
+                            }
+                            catch (Exception e)
+                            {
+                                auditory.Schedule = "[]";
+                                auditory.lastUpdated = DateTime.UtcNow;
+                                Log.Information($"Updated: {auditory.name} - {timeFromUpdate}");
+                                context.SaveChanges();
+                            }
                         }
                     }
-                    
+
                     var schedule = JsonConvert.DeserializeObject<List<Event>>(auditory.Schedule);
 
-                    return schedule.Where(e => e.StartTime >= StartTime && e.StartTime <= EndTime)
-                        .OrderBy(x => x.StartTime)
+                    return schedule.Where(e => e.startTime >= StartTime && e.startTime <= EndTime)
+                        .OrderBy(x => x.startTime)
                         .ToList();
                 }
 

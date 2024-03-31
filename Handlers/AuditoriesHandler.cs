@@ -8,7 +8,7 @@ public class AuditoriesHandler
 {
     public static List<Auditory> RemoveDuplicates(List<Auditory> list)
     {
-        return list.GroupBy(x => new { x.Id, x.Name })
+        return list.GroupBy(x => new { x.id, x.name })
             .Select(x => x.First())
             .ToList();
     }

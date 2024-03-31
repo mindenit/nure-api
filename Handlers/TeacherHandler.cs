@@ -8,7 +8,7 @@ public class TeachersHandler
 {
     public static List<Teacher> RemoveDuplicates(List<Teacher> list)
     {
-        return list.GroupBy(x => new { x.Id })
+        return list.GroupBy(x => new { x.id })
             .Select(x => x.First())
             .ToList();
     }

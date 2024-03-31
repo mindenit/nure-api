@@ -8,7 +8,7 @@ public class GroupsHandler
 {
     public static List<Group> RemoveDuplicates(List<Group> list)
     {
-        return list.GroupBy(x => new { x.Id, x.Name })
+        return list.GroupBy(x => new { x.id, x.name })
             .Select(x => x.First())
             .ToList();
     }
